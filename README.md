@@ -1,6 +1,5 @@
 <div align="center">
-<h1>Distill Any Depth: 
-  Distillation Creates a Stronger Monocular Depth Estimator
+<h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry
 </h1>
   
 [**Xiankang He**](https://github.com/shuiyued)<sup>1*,2</sup> · [**Dongyan Guo**](https://homepage.zjut.edu.cn/gdy/)<sup>1*</sup> · [**Hongji Li**]()<sup>2,3</sup>
