@@ -1,41 +1,25 @@
-<div align="center">
-<h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry
-</h1>
-  
-[**Xiankang He**](https://github.com/shuiyued)<sup>1*,2</sup> · [**Dongyan Guo**](https://homepage.zjut.edu.cn/gdy/)<sup>1*</sup> · [**Hongji Li**]()<sup>2,3</sup>
-  <br>
-[**Ruibo Li**]()<sup>4</sup> · [**Ying Cui**](https://homepage.zjut.edu.cn/cuiying/)<sup>1</sup> · [**Chi Zhang**](https://icoz69.github.io/)<sup>2✉</sup> 
+﻿<div align="center">
+<h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
 
-<sup>1</sup>ZJUT&emsp;&emsp;&emsp;<sup>2</sup>WestLake University&emsp;&emsp;&emsp;<sup>3</sup>LZU&emsp;&emsp;&emsp;<sup>4</sup>NTU
+Xiankang He<sup>1,2</sup>, Peile Lin<sup>1,2</sup>, Ying Cui<sup>1,2</sup>, Dongyan Guo<sup>1,2*</sup>, Chunhua Shen<sup>1,2</sup>, Xiaoqin Zhang<sup>1,2</sup>
 <br>
-✉ Corresponding author
+<sup>1</sup> College of Computer Science and Technology, Zhejiang University of Technology, Hangzhou 310023
 <br>
-*Equal Contribution. This work was done while Xiankang He was visiting Westlake University.
-
-<a href="http://arxiv.org/abs/2502.19204"><img src='https://img.shields.io/badge/ArXiv-2502.19204-red' alt='Paper PDF'></a>
-<a href='https://distill-any-depth-official.github.io'><img src='https://img.shields.io/badge/Project-Page-green' alt='Project Page'></a>
-<a href='https://huggingface.co/spaces/xingyang1/Distill-Any-Depth'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Gradio%20Demo-HF-orange'></a>
-
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/distill-any-depth-distillation-creates-a/monocular-depth-estimation-on-eth3d)](https://paperswithcode.com/sota/monocular-depth-estimation-on-eth3d?p=distill-any-depth-distillation-creates-a)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/distill-any-depth-distillation-creates-a/depth-estimation-on-scannetv2)](https://paperswithcode.com/sota/depth-estimation-on-scannetv2?p=distill-any-depth-distillation-creates-a)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/distill-any-depth-distillation-creates-a/monocular-depth-estimation-on-nyu-depth-v2)](https://paperswithcode.com/sota/monocular-depth-estimation-on-nyu-depth-v2?p=distill-any-depth-distillation-creates-a)
-
+<sup>2</sup> Zhejiang Key Laboratory of Visual Information Intelligent Processing, Hangzhou 310023
+<br>
+*Corresponding author
 </div>
 
+
+## Method Overview
+GeoMotion is a feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It combines 4D geometric priors from a pretrained reconstruction model (pi^3) with local pixel-level motion from optical flow to disentangle object motion from camera motion in a single pass.
 
 
 We present Distill-Any-Depth, a new SOTA monocular depth estimation model trained with our proposed knowledge distillation algorithms. Models with various sizes are available in this repo.
 
 ![teaser](data/teaser/depthmap.png)
 
-## News
-- **2025-03-08:** We release the small size of our model based on DAv2.
-- **2025-03-02:** Our demo is updated to GPU version. Enjoy it! We also include the Gradio demo code in this repo.
-- **2025-02-26:🔥🔥🔥** Paper, project page, code, models, and demos are  released.
 
-## TODO
-- [ ] Release evaluation and training code.
-- [ ] Release additional models in various sizes.
 
 ## Pre-trained Models
 
