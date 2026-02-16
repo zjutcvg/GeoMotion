@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CODE_DIR="/data0/hexiankang/code/SegAnyMo"
+CODE_DIR="/root/GeoMotion"
 MODEL_NAME="pi3_conf_low_35_feature_flow_gotm_verse_stop_all"
 MODEL_PATH="$CODE_DIR/logs/${MODEL_NAME}/best_model.pth"
 

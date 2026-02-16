@@ -1,7 +1,5 @@
-from romo import db_eval_iou, eval_JM_JR
-from core.eval.eval_mask import db_eval_boundary
-# from motion_seg_inference import MotionSegmentationInference, refine_sam, split_components
-from motion_seg_inference_sam import MotionSegmentationInference, refine_sam, split_components
+from core.eval.eval_mask import db_eval_iou, db_eval_boundary
+from motion_seg_inference import MotionSegmentationInference, refine_sam, split_components
 import numpy as np
 import torch
 import re
@@ -22,13 +20,16 @@ def _natural_key(s: str):
 class DAVISEvaluator:
     """Evaluate motion segmentation on DAVIS dataset"""
     
-    def __init__(self, model_path, output_base_dir):
+    def __init__(self, model_path, output_base_dir, pi3_model_path=None):
         """
         Args:
             model_path: Path to trained model
             output_base_dir: Base directory to save all results
         """
-        self.inference = MotionSegmentationInference(model_path)
+        self.inference = MotionSegmentationInference(
+            model_path=model_path,
+            pi3_model_path=pi3_model_path,
+        )
         self.output_base_dir = output_base_dir
         os.makedirs(output_base_dir, exist_ok=True)
         
@@ -1086,6 +1087,8 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(description="Evaluate motion segmentation model.")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model .pth file")
+    parser.add_argument("--pi3_model_path", type=str, default=None,
+                        help="Path to pi3 .safetensors checkpoint. If omitted, use PI3_MODEL_PATH env var.")
     parser.add_argument("--output_dir", type=str, required=True, help="Directory to save evaluation results")
     parser.add_argument("--image_root", type=str, required=True, help="Path to image directory")
     parser.add_argument("--annotation_root", type=str, required=True, help="Path to annotation directory")
@@ -1106,6 +1109,7 @@ def main():
     evaluator = DAVISEvaluator(
         model_path=args.model_path,
         output_base_dir=args.output_dir,
+        pi3_model_path=args.pi3_model_path,
     )
 
     # 调用评估函数

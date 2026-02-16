@@ -348,7 +348,8 @@ def setup_motion_seg_dataset(cfg):
 
         elif dataset_name == 'gotmoving':
             got_moving_dataset = MotionSegmentationDatasetGotmoving(
-                data_dir="/data1/got_train_video_roots_with_masks.txt",
+                # data_dir="/data1/got_train_video_roots_with_masks.txt",
+                data_dir=data_dir,
                 transform=train_transform, 
                 split='train', 
                 img_size=cfg.img_size, 
@@ -443,9 +444,12 @@ def setup_motion_seg_model(cfg, device):
     # )
     # return model
 
+    # Prefer config path, fallback to environment variable for open-source reproducibility.
+    pi3_model_path = getattr(cfg, "vggt_model_path", None) or os.environ.get("PI3_MODEL_PATH", None)
+
     # Create model with motion cues
     model = create_pi3_motion_segmentation_model(
-        pi3_model_path="/data0/hexiankang/code/SegAnyMo/model.safetensors",  # Optional
+        pi3_model_path=pi3_model_path,
     )
     initialize_raft_model(device=device)
     # model = create_pi3_motion_segmentation_model(

@@ -13,7 +13,6 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 # from code.SegAnyMo import inference
-import utils as ut
 from tqdm import tqdm
 from pi3.utils.geometry import process_video_with_improved_sliding_window
 from sam2 import build_sam
@@ -954,7 +953,7 @@ class MotionSegmentationInference:
     """
     Inference class for motion segmentation using trained VGGT model
     """
-    def __init__(self, model_path, device='cuda'):
+    def __init__(self, model_path, pi3_model_path=None, device='cuda'):
         """
         Args:
             model_path: Path to trained model checkpoint
@@ -978,8 +977,10 @@ class MotionSegmentationInference:
         # from pi3.models.pi3_conf_flow_cam_lowfeature_4_segmask import create_pi3_motion_segmentation_model
         # from pi3.models.pi3_conf_flow_cam_lowfeature import create_pi3_motion_segmentation_model
         # from pi3.models.pi3_conf_flow_lowfeature_no_cam import create_pi3_motion_segmentation_model
+        if pi3_model_path is None:
+            pi3_model_path = os.environ.get("PI3_MODEL_PATH", None)
         self.model = create_pi3_motion_segmentation_model(
-            pi3_model_path="/data0/hexiankang/code/SegAnyMo/model.safetensors",  
+            pi3_model_path=pi3_model_path,
         ).to(device)
         initialize_raft_model(device=device)
         
@@ -1593,7 +1594,6 @@ def create_motion_video(images, motion_masks, save_dir, sequence_name, threshold
     out.release()
     print(f"Motion video saved to {video_path}")
 
-from romo_ import db_eval_iou, db_eval_boundary, find_partial_motion
 def run_inference_on_video_directory(inference, video_dir, output_dir, 
                                    max_frames=None, sequence_length=16, use_sam_refine=True):
     """
@@ -2036,6 +2036,8 @@ def main():
 
     parser.add_argument('--model_path', type=str, required=True,
                         help='Path to trained model checkpoint')
+    parser.add_argument('--pi3_model_path', type=str, default=None,
+                        help='Path to pi3 .safetensors checkpoint. If omitted, uses PI3_MODEL_PATH env var.')
 
     # 单序列（一个 rgb 目录）
     parser.add_argument('--input_dir', type=str, default=None,
@@ -2064,7 +2066,10 @@ def main():
     # ============================================================
     # 多序列模式（等价于你原来的 bash for）
     # ============================================================
-    inference = MotionSegmentationInference(args.model_path)
+    inference = MotionSegmentationInference(
+        model_path=args.model_path,
+        pi3_model_path=args.pi3_model_path,
+    )
     if args.dataset_dir is not None:
         print(f"Processing dataset: {args.dataset_dir}")
 
@@ -2083,7 +2088,7 @@ def main():
                 continue
 
             # seq_name = os.path.basename(os.path.dirname(rgb_dir))
-            seq_name = rgb_dir.split('/')[-1]
+            seq_name = os.path.basename(os.path.normpath(rgb_dir))
             out_dir = os.path.join(args.output_dir, seq_name)
             # import pdb; pdb.set_trace()
             os.makedirs(out_dir, exist_ok=True)
@@ -2123,7 +2128,7 @@ def main():
         print(f"Output: {out_dir}")
 
         motion_masks = run_inference_on_video_directory(
-            model_path=args.model_path,
+            inference=inference,
             video_dir=args.input_dir,
             output_dir=out_dir,
             max_frames=args.max_frames,

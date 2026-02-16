@@ -1,4 +1,6 @@
-﻿<div align="center">
+# GeoMotion
+
+<div align="center">
 <h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
 
 Xiankang He<sup>1,2</sup>, Peile Lin<sup>1,2</sup>, Ying Cui<sup>1,2</sup>, Dongyan Guo<sup>1,2*</sup>, Chunhua Shen<sup>1,2</sup>, Xiaoqin Zhang<sup>1,2</sup>
@@ -14,156 +16,245 @@ Xiankang He<sup>1,2</sup>, Peile Lin<sup>1,2</sup>, Ying Cui<sup>1,2</sup>, Dong
 ## Method Overview
 We present GeoMotion, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It combines 4D geometric priors from a pretrained reconstruction model (pi^3) with local pixel-level motion from optical flow to disentangle object motion from camera motion in a single pass.  Models are available in this repo.
 
-![teaser](data/teaser/depthmap.png)
 
+Official codebase for **GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry**.
 
+This repository provides:
+- training code (`train.py`)
+- evaluation code (`eval.py`)
+- inference/visualization code (`motion_seg_inference.py`, `vis_all.sh`)
 
-## Pre-trained Models
+## 1. Environment Setup
 
-We provide **two models** of varying scales for robust relative depth estimation:
-
-| Model | Architecture | Params | Checkpoint |
-|:-|:-:|:-:|:-:|
-| Distill-Any-Depth-Multi-Teacher-Small | Dav2-small | 24.8M | [Download](https://huggingface.co/xingyang1/Distill-Any-Depth/resolve/main/small/model.safetensors?download=true) |
-| Distill-Any-Depth-Multi-Teacher-Base | Dav2-base | 97.5M | [Download](https://huggingface.co/xingyang1/Distill-Any-Depth/resolve/main/base/model.safetensors?download=true) |
-| Distill-Any-Depth-Multi-Teacher-Large(demo) | Dav2-large | 335.3M | [Download](https://huggingface.co/xingyang1/Distill-Any-Depth/resolve/main/large/model.safetensors?download=true) |
-| Distill-Any-Depth-Dav2-Teacher-Large-2w-iter | Dav2-large | 335.3M | [Download](https://huggingface.co/xingyang1/Distill-Any-Depth/resolve/main/Distill-Any-Depth-Dav2-Teacher-Large-2w-iter/model.safetensors?download=true) |
-<!-- | Distill-Any-Depth-Dav2-Teacher-MiDaSv3.1 | dpt_beit_large_512 | 345M | [Download]() | -->
-
-
-## Getting Started
-
-We recommend setting up a virtual environment to ensure package compatibility. You can use miniconda to set up the environment. The following steps show how to create and activate the environment, and install dependencies:
+### 1.1 Create Conda Environment
 
 ```bash
-# Create a new conda environment with Python 3.10
-conda create -n distill-any-depth -y python=3.10
+conda create -n geomotion python=3.10 -y
+conda activate geomotion
+```
 
-# Activate the created environment
-conda activate distill-any-depth
+### 1.2 Install PyTorch
 
-# Install the required Python packages
+Install a PyTorch version matching your CUDA runtime from the official guide:
+- https://pytorch.org/get-started/locally/
+
+Example (CUDA 12.1):
+
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+
+### 1.3 Install Project Dependencies
+
+Install **Pi3 official dependencies** first:
+
+```bash
+# from Pi3 official repo
+# https://github.com/yyfz/Pi3
+# pip install -r https://raw.githubusercontent.com/yyfz/Pi3/main/requirements.txt
 pip install -r requirements.txt
-
-# Navigate to the Detectron2 directory and install it
-cd detectron2
-pip install -e .
-
-cd ..
-pip install -e .
 ```
 
-To download pre-trained checkpoints follow the code snippet below:
-
-
-### Running from commandline
-
-We provide a helper script to run the model on a single image directly:
-```bash
-# Run prediction on a single image using the helper script
-source scripts/00_infer.sh
-# or use bash
-bash scripts/00_infer.sh
-```
+Optional acceleration package:
 
 ```bash
-# you should download the pretrained model and input the path on the '--checkpoint'
-
-# Define the GPU ID and models you wish to run
-GPU_ID=0
-model_list=('xxx')  # List of models you want to test
-
-# Loop through each model and run inference
-for model in "${model_list[@]}"; do
-    # Run the model inference with specified parameters
-    CUDA_VISIBLE_DEVICES=${GPU_ID} \
-    python tools/testers/infer.py \
-        --seed 1234 \  # Set random seed for reproducibility
-        --checkpoint 'checkpoint/large/model.safetensors' \  # Path to the pre-trained model checkpoint
-        --processing_res 700 \ 
-        --output_dir output/${model} \  # Directory to save the output results
-        --arch_name 'depthanything-large' \  # [depthanything-large, depthanything-base]
-done
+pip install xformers
 ```
 
-## Use from transformers
-Here is how to use this model to perform zero-shot depth estimation:
+## 2. Pretrained Models
 
-```python
-from transformers import pipeline
-from PIL import Image
-import requests
-# load pipe
-pipe = pipeline(task="depth-estimation", model="xingyang1/Distill-Any-Depth-Large-hf")
-# load image
-url = 'http://images.cocodataset.org/val2017/000000039769.jpg'
-image = Image.open(requests.get(url, stream=True).raw)
-# inference
-depth = pipe(image)["depth"]
-```
-We are sincerely grateful to [@keetrap](https://github.com/keetrap) and [@Niels Rogge](https://huggingface.co/nielsr) for their huge efforts in supporting our models in Transformers.
+Please place checkpoints under `checkpoint/`.
 
-## Gradio demo
-We also include the Gradio demo code, Please clone the project and set up the environment using pip install.
+| Checkpoint | Purpose | Expected Path | Download |
+|---|---|---|---|
+| PI3 backbone (`.safetensors`) | Backbone initialization for train/eval/inference | `checkpoint/model.safetensors` | `TODO: add Hugging Face link` |
+| GeoMotion trained model (`.pth`) | Motion segmentation checkpoint | `checkpoint/best_model.pth` | `TODO: add Hugging Face link` |
+
+You can pass PI3 path either by argument or environment variable:
 
 ```bash
-# Create a new conda environment with Python 3.10
-conda create -n distill-any-depth -y python=3.10
-
-# Activate the created environment
-conda activate distill-any-depth
-
-# Install the required Python packages
-pip install -r requirements.txt
-
-pip install -e .
+export PI3_MODEL_PATH=checkpoint/model.safetensors
+# Windows PowerShell:
+# $env:PI3_MODEL_PATH="checkpoint/model.safetensors"
 ```
-Make sure you can connect to Hugging Face, or use the local path. (app.py)
+
+## 3. Dataset Download Guide
+
+### 3.1 Evaluation Datasets
+
+- DAVIS (2016/2017): https://davischallenge.org/davis2017/code.html
+- FBMS-59: https://lmb.informatik.uni-freiburg.de/resources/datasets/FBMS/
+- SegTrack-v2: https://web.engr.oregonstate.edu/~lif/SegTrack2/dataset/
+
+Recommended local layout:
+
+```text
+data/
+  DAVIS/
+    JPEGImages/480p/<sequence>/*.jpg
+    Annotations/480p/<sequence>/*.png
+  DAVIS2017-M/
+    DAVIS/
+      JPEGImages/480p/<sequence>/*.jpg
+      Annotations/480p/<sequence>/*.png
+  FBMS59_clean/
+    JPEGImages/<sequence>/*
+    Annotations/<sequence>/*
+  SegTrackv2/
+    JPEGImages_jpg_standardized/<sequence>/*
+    GroundTruth/<sequence>/*
+```
+
+### 3.2 Training Datasets (used by current config)
+
+Current training config (`configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml`) uses:
+- GOT-10k: https://got-10k.aitestunion.com/
+- HOI4D: https://hoi4d.github.io/
+- DynamicStereo / GOT-Moving / DynamicVerse: use your prepared copies, then update paths in config.
+
+`train_dataset` is expected to be:
+
+```yaml
+train_dataset: ["got10k","hoi4d","dynamic_stereo","gotmoving","dynamicverse"]
+```
+
+`train_root` must be in the **same order** as `train_dataset`:
+
+```yaml
+train_root:
+  - /path/to/GOT-10k_Train_split_01
+  - /path/to/HOI4D_clean
+  - /path/to/dynamic_stereo_root
+  - /path/to/got_train_video_roots_with_masks.txt
+  - /path/to/DynamicVerse
+```
+
+Dataset structure notes used by current loaders:
+- `got10k`: each sequence folder contains `images/` and `masks/`
+- `hoi4d`: root contains `images/<seq>/` and `dynamic_masks/<seq>/`
+- `dynamic_stereo`: root contains `train/<seq>/images/` and `train/<seq>/dynamic_masks/`
+- `gotmoving`: supports either a root directory scan, or a `.txt` file listing sequence roots (recommended)
+- `dynamicverse`: recursive scan for `rgb/` and corresponding `mask/` folders
+
+## 4. Inference and Visualization
+
+### 4.1 Quick Start with Script
+
 ```bash
-# if use hf_hub_download, you can use the following code
-checkpoint_path = hf_hub_download(repo_id=f"xingyang1/Distill-Any-Depth", filename=f"large/model.safetensors", repo_type="model")
-
-# if use local path, you can use the following code
-# checkpoint_path = "path/to/your/model.safetensors"
+bash vis_all.sh
 ```
-in the end, 
+
+Default script command:
+
 ```bash
-python app.py
-
-:~/Distill-Any-Depth-main# python app.py 
-xFormers not available
-xFormers not available
-xFormers not available
-xFormers not available
-Running on local URL:  http://127.0.0.1:7860
-
-To create a public link, set `share=True` in `launch()`.
-IMPORTANT: You are using gradio version 4.36.0, however version 4.44.1 is available, please upgrade.
---------
+CUDA_VISIBLE_DEVICES=0 python motion_seg_inference.py \
+  --model_path checkpoint/best_model.pth \
+  --dataset_dir data/test \
+  --output_dir output/test \
+  --threshold 0.5
 ```
 
-## More Results
+### 4.2 Single Sequence Inference
 
-![teaser](data/teaser/teaser.png)
+```bash
+python motion_seg_inference.py \
+  --model_path checkpoint/best_model.pth \
+  --pi3_model_path checkpoint/model.safetensors \
+  --input_dir data/test/<sequence_name> \
+  --output_dir output/single \
+  --sequence_length 32 \
+  --threshold 0.5
+```
 
-![teaser](data/teaser/point_cloud_00.png)
+### 4.3 Dataset Inference
 
-## Citation
+```bash
+python motion_seg_inference.py \
+  --model_path checkpoint/best_model.pth \
+  --pi3_model_path checkpoint/model.safetensors \
+  --dataset_dir data/test \
+  --output_dir output/test \
+  --sequence_length 32 \
+  --threshold 0.5
+```
 
-If you find our work useful, please cite the following paper:
+## 5. Evaluation
+
+### 5.1 Evaluate One Dataset
+
+```bash
+python eval.py \
+  --model_path checkpoint/best_model.pth \
+  --pi3_model_path checkpoint/model.safetensors \
+  --output_dir eval/davis2016 \
+  --image_root data/DAVIS/JPEGImages/480p \
+  --annotation_root data/DAVIS/Annotations/480p \
+  --sequence_length 32 \
+  --use_sam_refine True \
+  --davis 2016
+```
+
+`--davis` supports: `2016`, `2017`, `davis-all`, `2016-M`, `2017-M`, `fbms`, `segtrack`.
+
+### 5.2 Batch Evaluation Script
+
+```bash
+bash eval.sh
+```
+
+Before running, edit `eval.sh`:
+- `CODE_DIR`
+- `CUDA_VISIBLE_DEVICES`
+- dataset root paths
+
+## 6. Training
+
+### 6.1 Configure Paths
+
+Edit `configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml`:
+- `train_dataset` (recommended: `["got10k","hoi4d","dynamic_stereo","gotmoving","dynamicverse"]`)
+- `train_root`
+- `test_root`
+- `log_dir`
+- `vggt_model_path` (PI3 `.safetensors` path)
+
+### 6.2 Start Training
+
+Single-GPU (same as `train.sh`):
+
+```bash
+CUDA_VISIBLE_DEVICES=0 torchrun --master-port=29502 --nproc_per_node=1 train.py configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml
+```
+
+Multi-GPU example:
+
+```bash
+torchrun --master-port=29502 --nproc_per_node=4 train.py configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml
+```
+
+Checkpoints and logs are saved to `log_dir` in config.
+
+## 7. Notes
+
+- `eval.py` and `motion_seg_inference.py` now support `--pi3_model_path` and `PI3_MODEL_PATH`.
+- If you use custom dataset splits for `2016-M` / `2017-M`, update the sequence lists in `eval.py`.
+
+## 8. Acknowledgements
+
+This project builds on and benefits from the following excellent works:
+- Pi3
+- VGGT
+- SegAnyMotion
+- OCLR
+- Easi3R
+
+## 9. Citation
 
 ```bibtex
-@article{he2025distill,
-  title   = {Distill Any Depth: Distillation Creates a Stronger Monocular Depth Estimator},
-  author  = {Xiankang He and Dongyan Guo and Hongji Li and Ruibo Li and Ying Cui and Chi Zhang},
-  year    = {2025},
-  journal = {arXiv preprint arXiv: 2502.19204}
+@article{geomotion2026,
+  title={GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry},
+  author={TODO},
+  journal={arXiv preprint arXiv:TODO},
+  year={2026}
 }
 ```
-
-## Acknowledgements
-Thanks to these great repositories: [Depth Anything V2](https://github.com/DepthAnything/Depth-Anything-V2)，[MiDaS](https://github.com/isl-org/MiDaS)，[GenPercept](https://github.com/aim-uofa/GenPercept)，[GeoBench: 3D Geometry Estimation Made Easy](https://github.com/aim-uofa/geobench)，[HDN](https://github.com/icoz69/HDN)，[Detectron2](https://github.com/facebookresearch/detectron2) and many other inspiring works in the community.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Westlake-AGI-Lab/Distill-Any-Depth&type=Date)](https://star-history.com/#Westlake-AGI-Lab/Distill-Any-Depth&Date)
