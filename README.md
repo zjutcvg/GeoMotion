@@ -12,10 +12,7 @@ Xiankang He<sup>1,2</sup>, Peile Lin<sup>1,2</sup>, Ying Cui<sup>1,2</sup>, Dong
 
 
 ## Method Overview
-GeoMotion is a feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It combines 4D geometric priors from a pretrained reconstruction model (pi^3) with local pixel-level motion from optical flow to disentangle object motion from camera motion in a single pass.
-
-
-We present Distill-Any-Depth, a new SOTA monocular depth estimation model trained with our proposed knowledge distillation algorithms. Models with various sizes are available in this repo.
+We present GeoMotion, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It combines 4D geometric priors from a pretrained reconstruction model (pi^3) with local pixel-level motion from optical flow to disentangle object motion from camera motion in a single pass.  Models are available in this repo.
 
 ![teaser](data/teaser/depthmap.png)
 
