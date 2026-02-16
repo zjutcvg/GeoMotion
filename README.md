@@ -1,5 +1,3 @@
-# GeoMotion
-
 <div align="center">
 <h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
 
@@ -15,14 +13,6 @@ Xiankang He<sup>1,2</sup>, Peile Lin<sup>1,2</sup>, Ying Cui<sup>1,2</sup>, Dong
 
 ## Method Overview
 We present GeoMotion, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It combines 4D geometric priors from a pretrained reconstruction model (pi^3) with local pixel-level motion from optical flow to disentangle object motion from camera motion in a single pass.  Models are available in this repo.
-
-
-Official codebase for **GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry**.
-
-This repository provides:
-- training code (`train.py`)
-- evaluation code (`eval.py`)
-- inference/visualization code (`motion_seg_inference.py`, `vis_all.sh`)
 
 ## 1. Environment Setup
 
