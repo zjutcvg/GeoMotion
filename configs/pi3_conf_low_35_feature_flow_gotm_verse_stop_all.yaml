@@ -1,23 +1,15 @@
-# Motion Segmentation Configuration for VGGT
+# Motion Segmentation Configuration for Pi3
 cfg_name: "pi3_conf_low_35_feature_flow_gotm_verse_stop_all"
 
 # =============================================================================
 # Dataset Configuration
-# /data2/dataset/MOT/PETS09-S2L1 KITTI-17 
-# /data2/dataset/MOT/KITTI-17
-# /data2/dataset/MOT/ADL-Rundle-6
 # =============================================================================
-# Supported datasets: ["hoi4d", "davis", "kitti_motion", "custom"]
-# train_dataset: ["got10k","hoi4d", "dynamic_stereo", 'ytvos18m', 'omniworld', 'dynamicverse']
 train_dataset: ["got10k","hoi4d", "dynamic_stereo", 'gotmoving', 'dynamicverse']
-# train_dataset: ["got10k","hoi4d", "dynamic_stereo", 'ytvos18m']
-# train_root: ['/data0/hexiankang/code/SegAnyMo/data/GOT10k/GOT-10k_Train_split_01', "/data0/hexiankang/code/SegAnyMo/data/HOI4D", "/data0/hexiankang/code/SegAnyMo/data/dynamic_replica_data",'/data0/hexiankang/code/SegAnyMo/data/YTVOS18m/train','/data1/OminiWorld/annotations/OmniWorld-Game', '/data1/DynamicVerse']
-train_root: ['/data0/hexiankang/code/SegAnyMo/data/GOT10k/GOT-10k_Train_split_01', "/data0/hexiankang/code/SegAnyMo/data/HOI4D_clean", "/data0/hexiankang/code/SegAnyMo/data/dynamic_replica_data", '/data1/', '/data1/DynamicVerse']
-# train_root: ['/data0/hexiankang/code/SegAnyMo/data/GOT10k/GOT-10k_Train_split_01', "/data0/hexiankang/code/SegAnyMo/data/HOI4D", "/data0/hexiankang/code/SegAnyMo/data/dynamic_replica_data",'/data0/hexiankang/code/SegAnyMo/data/YTVOS18m/train']
+train_root: ['data/GOT10k/GOT-10k_Train_split_01', "data/HOI4D_clean", "data/dynamic_replica_data", 'data/gotmoving', 'data/DynamicVerse']
 
 # Test datasets (optional, can be same as train or different)
 test_dataset: ["test"]  
-test_root: ["/data0/hexiankang/code/SegAnyMo/data/test"]
+test_root: ["data/test"]
 
 # Data loading settings
 num_workers: 4
@@ -32,11 +24,12 @@ sequence_length: 12          # 视频序列长度
 sample_stride: 6            # 帧采样间隔
 
 # =============================================================================
-# VGGT Model Configuration  
+# pi3 Model Configuration  
 # =============================================================================
-# Pre-trained VGGT model path
+# Pre-trained pi3 model path
 model_name: "pi3_conf_low_35_feature_flow_gotm_verse_stop_all"
-vggt_model_path: "/data0/hexiankang/code/SegAnyMo/model.safetensors"  # Update this path
+vggt_model_path: "checkpoint/model.safetensors"  # Update this path with pi3 model
+raft_model_path: null  # Optional; can also be set via RAFT_MODEL_PATH
 freeze_backbone: true
 
 # 损失函数权重
@@ -48,7 +41,7 @@ gradient_clip: 1.0
 save_freq: 3000 #1000
 print_freq: 5         # Print frequency during training
 
-# VGGT model parameters
+# pi3 model parameters
 patch_size: 14          # Patch size for VGGT
 embed_dim: 1024         # Embedding dimension
 
@@ -60,15 +53,10 @@ lr: 0.00005             # Learning rate for mask head (changed from 1e-4)
 weight_decay: 0.05    # Weight decay (changed from 1e-4)
 min_lr: 0.000005        # Minimum learning rate (changed from 1e-6)
 
-# Loss function weights (remove duplicates)
-# bce_weight: 1.0        # Already defined above
-# dice_weight: 1.0       # Already defined above
-
-
 # =============================================================================
 # Logging and Visualization
 # =============================================================================
-log_dir: "/data0/hexiankang/code/SegAnyMo/logs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all"
+log_dir: "pi3_conf_low_35_feature_flow_gotm_verse_stop_all"
 vis: true              # Whether to enable visualization
 
 

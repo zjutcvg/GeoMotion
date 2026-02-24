@@ -304,7 +304,7 @@ def setup_motion_seg_dataset(cfg):
         
         elif dataset_name == 'omniworld':
             omni_train_dataset = OminiWorldDataset(
-                data_dir="/data1/OminiWorld/annotations/OmniWorld-Game",
+                data_dir=data_dir,
                 split='train',
                 img_size=cfg.img_size,
                 sequence_length=cfg.sequence_length,
@@ -444,14 +444,15 @@ def setup_motion_seg_model(cfg, device):
     # )
     # return model
 
-    # Prefer config path, fallback to environment variable for open-source reproducibility.
+    # Prefer config paths and fall back to environment variables for reproducibility.
     pi3_model_path = getattr(cfg, "vggt_model_path", None) or os.environ.get("PI3_MODEL_PATH", None)
+    raft_model_path = getattr(cfg, "raft_model_path", None) or os.environ.get("RAFT_MODEL_PATH", None)
 
     # Create model with motion cues
     model = create_pi3_motion_segmentation_model(
         pi3_model_path=pi3_model_path,
     )
-    initialize_raft_model(device=device)
+    initialize_raft_model(device=device, raft_model_path=raft_model_path)
     # model = create_pi3_motion_segmentation_model(
     #     pi3_model_path="/data0/hexiankang/code/SegAnyMo/model.safetensors",
     #     use_dino_features=True,

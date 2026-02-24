@@ -1,54 +1,87 @@
 #!/bin/bash
+set -euo pipefail
 
-CODE_DIR="/root/GeoMotion"
-MODEL_NAME="pi3_conf_low_35_feature_flow_gotm_verse_stop_all"
-MODEL_PATH="$CODE_DIR/logs/${MODEL_NAME}/best_model.pth"
+ROOT_DIR=${ROOT_DIR:-$(cd "$(dirname "$0")" && pwd)}
+CUDA_DEVICE=${CUDA_DEVICE:-0}
+MODEL_NAME=${MODEL_NAME:-pi3_conf_low_35_feature_flow_gotm_verse_stop_all}
+MODEL_PATH=${MODEL_PATH:-$ROOT_DIR/logs/${MODEL_NAME}/best_model.pth}
+USE_SAM=${USE_SAM:-True}
+SEQUENCE_LENGTH=${SEQUENCE_LENGTH:-32}
+DATASETS_CSV=${DATASETS_CSV:-2016-M,2017-M,2016,segtrack,fbms}
 
-DATASETS=("2016-M" "2017-M" "2016" "segtrack" "fbms")
+# Optional runtime paths (used when provided)
+PI3_MODEL_PATH=${PI3_MODEL_PATH:-$ROOT_DIR/checkpoint/model.safetensors}
+RAFT_MODEL_PATH=${RAFT_MODEL_PATH:-}
+SAM2_CONFIG_PATH=${SAM2_CONFIG_PATH:-$ROOT_DIR/configs/sam2.1/sam2.1_hiera_l.yaml}
+SAM2_CHECKPOINT_PATH=${SAM2_CHECKPOINT_PATH:-$ROOT_DIR/sam2-main/checkpoints/sam2.1_hiera_large.pt}
 
-USE_SAM="True"   # 若想对部分数据集使用 SAM，可在循环里改
+append_opt_arg() {
+  local flag="$1"
+  local value="$2"
+  if [[ -n "$value" ]]; then
+    EXTRA_ARGS+=("$flag" "$value")
+  fi
+}
+
+resolve_dataset_roots() {
+  local dataset="$1"
+  case "$dataset" in
+    2017-M|2016-M)
+      IMG_ROOT="$ROOT_DIR/data/DAVIS2017-M/DAVIS/JPEGImages/480p"
+      ANN_ROOT="$ROOT_DIR/data/DAVIS2017-M/DAVIS/Annotations/480p"
+      ;;
+    2016|2017|davis-all)
+      IMG_ROOT="$ROOT_DIR/data/DAVIS/JPEGImages/480p"
+      ANN_ROOT="$ROOT_DIR/data/DAVIS/Annotations/480p"
+      ;;
+    segtrack)
+      IMG_ROOT="$ROOT_DIR/data/SegTrackv2/JPEGImages_jpg_standardized"
+      ANN_ROOT="$ROOT_DIR/data/SegTrackv2/GroundTruth"
+      ;;
+    fbms)
+      IMG_ROOT="$ROOT_DIR/data/FBMS59_clean/JPEGImages"
+      ANN_ROOT="$ROOT_DIR/data/FBMS59_clean/Annotations"
+      ;;
+    *)
+      echo "Unknown dataset: $dataset" >&2
+      return 1
+      ;;
+  esac
+}
+
+IFS=',' read -r -a DATASETS <<< "$DATASETS_CSV"
 
 for DATASET in "${DATASETS[@]}"; do
-    echo "=========================================="
-    echo " Evaluating dataset: $DATASET"
-    echo "=========================================="
+  echo "=========================================="
+  echo " Evaluating dataset: $DATASET"
+  echo "=========================================="
 
-    # ✅ 正确的 bash 判断语法
-    if [[ "$DATASET" == "2017-M" || "$DATASET" == "2016-M" ]]; then
-        IMG_ROOT="$CODE_DIR/data/DAVIS2017-M/DAVIS/JPEGImages/480p"
-        ANN_ROOT="$CODE_DIR/data/DAVIS2017-M/DAVIS/Annotations/480p"
+  resolve_dataset_roots "$DATASET"
+  OUTPUT_DIR="$ROOT_DIR/eval/${MODEL_NAME}_${DATASET}"
 
-    elif [[ "$DATASET" == "2016" || "$DATASET" == "2017" || "$DATASET" == "davis-all" ]]; then
-        IMG_ROOT="$CODE_DIR/data/DAVIS/JPEGImages/480p"
-        ANN_ROOT="$CODE_DIR/data/DAVIS/Annotations/480p"
+  EXTRA_ARGS=()
+  append_opt_arg --pi3_model_path "$PI3_MODEL_PATH"
+  append_opt_arg --raft_model_path "$RAFT_MODEL_PATH"
+  append_opt_arg --sam2_config_path "$SAM2_CONFIG_PATH"
+  append_opt_arg --sam2_checkpoint_path "$SAM2_CHECKPOINT_PATH"
 
-    elif [[ "$DATASET" == "segtrack" ]]; then
-        IMG_ROOT="$CODE_DIR/data/SegTrackv2/JPEGImages_jpg_standardized"
-        ANN_ROOT="$CODE_DIR/data/SegTrackv2/GroundTruth"
+  CMD=(
+    python "$ROOT_DIR/eval.py"
+    --model_path "$MODEL_PATH"
+    --output_dir "$OUTPUT_DIR"
+    --image_root "$IMG_ROOT"
+    --annotation_root "$ANN_ROOT"
+    --sequence_length "$SEQUENCE_LENGTH"
+    --use_sam_refine "$USE_SAM"
+    --davis "$DATASET"
+    "${EXTRA_ARGS[@]}"
+  )
 
-    elif [[ "$DATASET" == "fbms" ]]; then
-        IMG_ROOT="$CODE_DIR/data/FBMS59_clean/JPEGImages"
-        ANN_ROOT="$CODE_DIR/data/FBMS59_clean/Annotations"
+  echo "Running evaluation..."
+  CUDA_VISIBLE_DEVICES="$CUDA_DEVICE" "${CMD[@]}"
 
-    else
-        echo "❌ Unknown dataset: $DATASET"
-        exit 1
-    fi
-
-    OUTPUT_DIR="$CODE_DIR/eval/${MODEL_NAME}_${DATASET}"
-
-    echo "➡️  Running evaluation..."
-    CUDA_VISIBLE_DEVICES=1 python "$CODE_DIR/eval.py" \
-        --model_path "$MODEL_PATH" \
-        --output_dir "$OUTPUT_DIR" \
-        --image_root "$IMG_ROOT" \
-        --annotation_root "$ANN_ROOT" \
-        --sequence_length 32 \
-        --use_sam_refine "$USE_SAM" \
-        --davis "$DATASET"
-
-    echo "✅ Finished: $DATASET"
-    echo ""
+  echo "Finished: $DATASET"
+  echo
 done
 
-echo "🎯 All evaluations completed!"
+echo "All evaluations completed!"

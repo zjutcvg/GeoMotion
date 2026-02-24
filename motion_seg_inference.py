@@ -17,9 +17,16 @@ from tqdm import tqdm
 from pi3.utils.geometry import process_video_with_improved_sliding_window
 from sam2 import build_sam
 
-def initialize_raft_model(device, raft_model_path='/data0/hexiankang/code/SegAnyMo/raft_large_C_T_SKHT_V2-ff5fadd5.pth'):
-    """初始化RAFT光流模型"""
+DEFAULT_RAFT_MODEL_PATH = "./raft_large_C_T_SKHT_V2-ff5fadd5.pth"
+DEFAULT_SAM2_CONFIG_PATH = "configs/sam2.1/sam2.1_hiera_l.yaml"
+DEFAULT_SAM2_CHECKPOINT_PATH = "./sam2-main/checkpoints/sam2.1_hiera_large.pt"
+
+
+def initialize_raft_model(device, raft_model_path=None):
+    """Initialize the RAFT optical-flow model."""
     global RAFT_MODEL, RAFT_TRANSFORMS
+    if raft_model_path is None:
+        raft_model_path = os.environ.get("RAFT_MODEL_PATH", DEFAULT_RAFT_MODEL_PATH)
     
     # Check for torchvision and optical flow models
     try:
@@ -953,7 +960,7 @@ class MotionSegmentationInference:
     """
     Inference class for motion segmentation using trained VGGT model
     """
-    def __init__(self, model_path, pi3_model_path=None, device='cuda'):
+    def __init__(self, model_path, pi3_model_path=None, raft_model_path=None, device='cuda'):
         """
         Args:
             model_path: Path to trained model checkpoint
@@ -982,7 +989,7 @@ class MotionSegmentationInference:
         self.model = create_pi3_motion_segmentation_model(
             pi3_model_path=pi3_model_path,
         ).to(device)
-        initialize_raft_model(device=device)
+        initialize_raft_model(device=device, raft_model_path=raft_model_path)
         
         # Create PI3 model with motion cues
         # from pi3.models.pi3_gate import create_pi3_motion_segmentation_model
@@ -1830,10 +1837,8 @@ def refine_sam(frame_tensors, mask_list, p_masks_sam, offset=0):
     p_masks_sam: returned SAM2-refined masks
     offset: video frame offset
   """
-  model_config = (  # shows best spatial resolution
-      'configs/sam2.1/sam2.1_hiera_l.yaml'
-  )
-  checkpoint = '/data0/hexiankang/code/SegAnyMo/sam2-main/checkpoints/sam2.1_hiera_large.pt'
+  model_config = os.environ.get("SAM2_CONFIG_PATH", DEFAULT_SAM2_CONFIG_PATH)
+  checkpoint = os.environ.get("SAM2_CHECKPOINT_PATH", DEFAULT_SAM2_CHECKPOINT_PATH)
   predictor = build_sam.build_sam2_video_predictor(
       model_config, checkpoint, device='cuda'
   )
@@ -2038,12 +2043,18 @@ def main():
                         help='Path to trained model checkpoint')
     parser.add_argument('--pi3_model_path', type=str, default=None,
                         help='Path to pi3 .safetensors checkpoint. If omitted, uses PI3_MODEL_PATH env var.')
+    parser.add_argument('--raft_model_path', type=str, default=None,
+                        help='Path to RAFT checkpoint. If omitted, uses RAFT_MODEL_PATH env var.')
+    parser.add_argument('--sam2_config_path', type=str, default=None,
+                        help='Path to SAM2 config yaml. If omitted, uses SAM2_CONFIG_PATH env var.')
+    parser.add_argument('--sam2_checkpoint_path', type=str, default=None,
+                        help='Path to SAM2 checkpoint. If omitted, uses SAM2_CHECKPOINT_PATH env var.')
 
-    # 单序列（一个 rgb 目录）
+    # Single-sequence mode (one RGB frame directory).
     parser.add_argument('--input_dir', type=str, default=None,
                         help='Path to a single rgb frame directory')
 
-    # 多序列（MOSE-0000 这种）
+    # Multi-sequence mode (e.g., MOSE-0000 style folders).
     parser.add_argument('--dataset_dir', type=str, default=None,
                         help='Dataset root dir containing */rgb folders')
 
@@ -2060,15 +2071,20 @@ def main():
                         help='Binary threshold for visualization')
 
     args = parser.parse_args()
+    if args.sam2_config_path:
+        os.environ["SAM2_CONFIG_PATH"] = args.sam2_config_path
+    if args.sam2_checkpoint_path:
+        os.environ["SAM2_CHECKPOINT_PATH"] = args.sam2_checkpoint_path
 
     os.makedirs(args.output_dir, exist_ok=True)
 
     # ============================================================
-    # 多序列模式（等价于你原来的 bash for）
+    # Multi-sequence mode (equivalent to the original bash loop).
     # ============================================================
     inference = MotionSegmentationInference(
         model_path=args.model_path,
         pi3_model_path=args.pi3_model_path,
+        raft_model_path=args.raft_model_path,
     )
     if args.dataset_dir is not None:
         print(f"Processing dataset: {args.dataset_dir}")
@@ -2113,7 +2129,7 @@ def main():
         return
 
     # ============================================================
-    # 单序列模式（一个 rgb 目录，方便 debug）
+    # Single-sequence mode (useful for debugging).
     # ============================================================
     if args.input_dir is not None:
         if not os.path.isdir(args.input_dir):
@@ -2143,7 +2159,7 @@ def main():
         return
 
     # ============================================================
-    # 参数错误兜底
+    # Argument fallback
     # ============================================================
     raise ValueError("You must specify either --dataset_dir or --input_dir")
 

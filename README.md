@@ -1,11 +1,13 @@
 <div align="center">
 <h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
 
-Xiankang He<sup>1,2</sup>, Peile Lin<sup>1,2</sup>, Ying Cui<sup>1,2</sup>, Dongyan Guo<sup>1,2*</sup>, Chunhua Shen<sup>1,2</sup>, Xiaoqin Zhang<sup>1,2</sup>
+Xiankang He<sup>1,2</sup>, Peile Lin<sup>1,2</sup>, Ying Cui<sup>1,2</sup>, Dongyan Guo<sup>1,2*</sup>, Chunhua Shen<sup>1,2,3</sup>, Xiaoqin Zhang<sup>1,2</sup>
 <br>
-<sup>1</sup> College of Computer Science and Technology, Zhejiang University of Technology, Hangzhou 310023
+<sup>1</sup> College of Computer Science and Technology, Zhejiang University of Technology
 <br>
-<sup>2</sup> Zhejiang Key Laboratory of Visual Information Intelligent Processing, Hangzhou 310023
+<sup>2</sup> Zhejiang Key Laboratory of Visual Information Intelligent Processing
+<br>
+<sup>3</sup> State Key Lab of CAD \& CG, Zhejiang University
 <br>
 *Corresponding author
 </div>
@@ -130,11 +132,22 @@ Dataset structure notes used by current loaders:
 
 ### 4.1 Quick Start with Script
 
+The repository provides `vis_all.sh` as the recommended entry for batch inference / visualization.
+It reads paths from environment variables, so you usually do **not** need to edit the script file.
+
 ```bash
 bash vis_all.sh
 ```
 
-Default script command:
+Default behavior (`vis_all.sh`):
+- model: `checkpoint/best_model.pth`
+- PI3 backbone: `checkpoint/model.safetensors`
+- input dataset directory: `data/test`
+- output directory: `output/test`
+- sequence length: `32`
+- threshold: `0.5`
+
+Equivalent command:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python motion_seg_inference.py \
@@ -142,6 +155,22 @@ CUDA_VISIBLE_DEVICES=0 python motion_seg_inference.py \
   --dataset_dir data/test \
   --output_dir output/test \
   --threshold 0.5
+```
+
+Common `vis_all.sh` usage examples:
+
+```bash
+# Use a custom model and dataset directory
+MODEL_PATH=logs/your_run/best_model.pth \
+DATASET_DIR=data/demo_sequences \
+OUTPUT_DIR=output/demo \
+bash vis_all.sh
+
+# Also provide RAFT / SAM2 paths explicitly
+RAFT_MODEL_PATH=checkpoint/raft_large.pth \
+SAM2_CONFIG_PATH=configs/sam2.1/sam2.1_hiera_l.yaml \
+SAM2_CHECKPOINT_PATH=sam2-main/checkpoints/sam2.1_hiera_large.pt \
+bash vis_all.sh
 ```
 
 ### 4.2 Single Sequence Inference
@@ -188,14 +217,43 @@ python eval.py \
 
 ### 5.2 Batch Evaluation Script
 
+`eval.sh` runs evaluation on multiple datasets in one command. It is also environment-variable driven (no script editing required for most users).
+
 ```bash
 bash eval.sh
 ```
 
-Before running, edit `eval.sh`:
-- `CODE_DIR`
-- `CUDA_VISIBLE_DEVICES`
-- dataset root paths
+Default evaluated datasets:
+
+```bash
+2016-M,2017-M,2016,segtrack,fbms
+```
+
+You can override this list with `DATASETS_CSV`:
+
+```bash
+# Evaluate only DAVIS 2016 and FBMS
+DATASETS_CSV=2016,fbms bash eval.sh
+
+# Evaluate one dataset with a custom model
+MODEL_NAME=my_run \
+MODEL_PATH=logs/my_run/best_model.pth \
+DATASETS_CSV=segtrack \
+bash eval.sh
+```
+
+Common `eval.sh` runtime variables:
+- `CUDA_DEVICE`
+- `MODEL_NAME`
+- `MODEL_PATH`
+- `USE_SAM`
+- `SEQUENCE_LENGTH`
+- `DATASETS_CSV`
+- `PI3_MODEL_PATH`, `RAFT_MODEL_PATH`, `SAM2_CONFIG_PATH`, `SAM2_CHECKPOINT_PATH`
+
+If your datasets are not under the default `data/` layout, either:
+- set `ROOT_DIR` to your repo root (default is script directory), and keep the documented `data/...` layout, or
+- edit the dataset path mapping inside `eval.sh` (`resolve_dataset_roots()`), which is the only place that contains dataset-specific roots.
 
 ## 6. Training
 
@@ -207,29 +265,22 @@ Edit `configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml`:
 - `test_root`
 - `log_dir`
 - `vggt_model_path` (PI3 `.safetensors` path)
+- `raft_model_path` (optional RAFT checkpoint path; can also use `RAFT_MODEL_PATH`)
 
 ### 6.2 Start Training
 
-Single-GPU (same as `train.sh`):
+```bash
+bash train.sh
+```
+Examples:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 torchrun --master-port=29502 --nproc_per_node=1 train.py configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml
 ```
 
-Multi-GPU example:
-
-```bash
-torchrun --master-port=29502 --nproc_per_node=4 train.py configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml
-```
-
 Checkpoints and logs are saved to `log_dir` in config.
 
-## 7. Notes
-
-- `eval.py` and `motion_seg_inference.py` now support `--pi3_model_path` and `PI3_MODEL_PATH`.
-- If you use custom dataset splits for `2016-M` / `2017-M`, update the sequence lists in `eval.py`.
-
-## 8. Acknowledgements
+## 7. Acknowledgements
 
 This project builds on and benefits from the following excellent works:
 - Pi3
@@ -238,7 +289,7 @@ This project builds on and benefits from the following excellent works:
 - OCLR
 - Easi3R
 
-## 9. Citation
+## 10. Citation
 
 ```bibtex
 @article{geomotion2026,

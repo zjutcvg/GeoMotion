@@ -1,5 +1,11 @@
 from core.eval.eval_mask import db_eval_iou, db_eval_boundary
-from motion_seg_inference import MotionSegmentationInference, refine_sam, split_components
+from motion_seg_inference import (
+    MotionSegmentationInference,
+    refine_sam,
+    split_components,
+    DEFAULT_SAM2_CONFIG_PATH,
+    DEFAULT_SAM2_CHECKPOINT_PATH,
+)
 import numpy as np
 import torch
 import re
@@ -13,14 +19,22 @@ import time
 from sam2 import build_sam
 
 def _natural_key(s: str):
-    # 让 1,2,10 按数值顺序排，适合 frame0001 这类名字
+    # Natural sort key, e.g. frame2 < frame10.
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
 
 
 class DAVISEvaluator:
     """Evaluate motion segmentation on DAVIS dataset"""
     
-    def __init__(self, model_path, output_base_dir, pi3_model_path=None):
+    def __init__(
+        self,
+        model_path,
+        output_base_dir,
+        pi3_model_path=None,
+        raft_model_path=None,
+        sam2_config_path=None,
+        sam2_checkpoint_path=None,
+    ):
         """
         Args:
             model_path: Path to trained model
@@ -29,8 +43,11 @@ class DAVISEvaluator:
         self.inference = MotionSegmentationInference(
             model_path=model_path,
             pi3_model_path=pi3_model_path,
+            raft_model_path=raft_model_path,
         )
         self.output_base_dir = output_base_dir
+        self.sam2_config_path = sam2_config_path
+        self.sam2_checkpoint_path = sam2_checkpoint_path
         os.makedirs(output_base_dir, exist_ok=True)
         
         self.all_sequence_metrics = []
@@ -163,8 +180,6 @@ class DAVISEvaluator:
     def _find_davis_sequences(self, image_root):
         """Find all sequences in DAVIS dataset"""
         sequences = []
-
-        # code/SegAnyMo/data/DAVIS/ImageSets/2016/val.txt
         for seq_name in os.listdir(image_root):
             # if seq_name not in val_set:
             #     continue
@@ -182,10 +197,6 @@ class DAVISEvaluator:
                  'drift-straight', 'goat', 'horsejump-high', 'kite-surf', 'libby',
                  'motocross-jump', 'paragliding-launch', 'parkour', 'scooter-black',
                  'soapbox']
-
-        # val_set= ['boat','blackswan','kite-walk','train']
-        # val_set= ['horsejump-high']
-        
         for seq_name in os.listdir(image_root):
             if seq_name not in val_set:
                 continue
@@ -198,14 +209,14 @@ class DAVISEvaluator:
     def _find_davis_2017_sequences(self, image_root):
         """Find all sequences in DAVIS dataset"""
         sequences = []
-        # val_set=['bike-packing', 'blackswan', 'bmx-trees', 'breakdance', 'camel',
-        #          'car-roundabout', 'car-shadow', 'cows', 'dance-twirl', 'dog',
-        #          'dogs-jump', 'drift-chicane', 'drift-straight', 'goat',
-        #          'gold-fish', 'horsejump-high', 'india', 'judo', 'kite-surf',
-        #          'lab-coat', 'libby', 'loading', 'mbike-trick', 'motocross-jump',
-        #          'paragliding-launch', 'parkour', 'pigs', 'scooter-black',
-        #          'shooting', 'soapbox']
-        val_set = ['dogs-jump', 'gold-fish']
+        val_set=['bike-packing', 'blackswan', 'bmx-trees', 'breakdance', 'camel',
+                 'car-roundabout', 'car-shadow', 'cows', 'dance-twirl', 'dog',
+                 'dogs-jump', 'drift-chicane', 'drift-straight', 'goat',
+                 'gold-fish', 'horsejump-high', 'india', 'judo', 'kite-surf',
+                 'lab-coat', 'libby', 'loading', 'mbike-trick', 'motocross-jump',
+                 'paragliding-launch', 'parkour', 'pigs', 'scooter-black',
+                 'shooting', 'soapbox']
+        # val_set = ['dogs-jump', 'gold-fish']
         
         for seq_name in os.listdir(image_root):
             if seq_name not in val_set:
@@ -240,102 +251,7 @@ class DAVISEvaluator:
                 sequences.append(seq_name)
         
         return sorted(sequences)
-    # def _evaluate_single_sequence(self, seq_name, frames_dir, gt_dir, 
-    #                               output_dir, sequence_length, 
-    #                               use_sam_refine, max_frames):
-    #     """
-    #     Evaluate a single video sequence
-        
-    #     Returns:
-    #         seq_metrics: Dictionary with sequence-level metrics
-    #     """
-        
-    #     # Load GT masks first to get original size
-    #     gt_masks = self._load_davis_gt_masks(gt_dir, None)
-        
-    #     if gt_masks is None or len(gt_masks) == 0:
-    #         print(f"  Error: No GT masks found")
-    #         return None
-        
-    #     gt_height, gt_width = gt_masks[0].shape
-    #     print(f"  GT mask size: {gt_width}x{gt_height}")
-        
-    #     # Load frames (JPEG images) with same size as GT
-    #     frame_files = sorted([f for f in os.listdir(frames_dir)
-    #                          if f.endswith(('.jpg', '.jpeg', '.png'))])[::4]
-        
-    #     if max_frames:
-    #         frame_files = frame_files[:max_frames]
-        
-    #     if len(frame_files) == 0:
-    #         print(f"  Error: No frames found")
-    #         return None
-        
-    #     # Load only as many frames as we have GT masks
-    #     frame_files = frame_files[:len(gt_masks)]
-        
-    #     video_frames = []
-    #     for frame_file in frame_files:
-    #         img = Image.open(os.path.join(frames_dir, frame_file)).convert('RGB')
-    #         # Resize frame to match GT mask size for consistency
-    #         img_resized = img.resize((gt_width, gt_height), Image.BILINEAR)
-    #         video_frames.append(img_resized)
-        
-    #     if gt_masks is None or len(gt_masks) != len(video_frames):
-    #         print(f"  Error: GT mask count mismatch "
-    #               f"(frames: {len(video_frames)}, masks: {len(gt_masks) if gt_masks else 0})")
-    #         return None
-        
-    #     print(f"  Processing {len(video_frames)} frames")
-        
-    #     all_motion_masks = []
-    #     frame_metrics = []
-        
-    #     # Process in chunks
-    #     for start_idx in tqdm(range(0, len(video_frames), sequence_length),
-    #                          desc=f"  {seq_name}", leave=False):
-    #         end_idx = min(start_idx + sequence_length, len(video_frames))
-    #         chunk_frames = video_frames[start_idx:end_idx]
-            
-    #         # Predict motion mask
-    #         motion_masks = self.inference.predict_motion_mask(chunk_frames)
-            
-    #         # SAM2 refinement
-    #         if use_sam_refine:
-    #             motion_masks = self._refine_with_sam(chunk_frames, motion_masks)
-    #         # import pdb;pdb.set_trace()
-    #         # Evaluate chunk
-    #         chunk_metrics = self._evaluate_chunk(
-    #             motion_masks, gt_masks[start_idx:end_idx], start_idx
-    #         )
-    #         frame_metrics.extend(chunk_metrics)
-            
-    #         all_motion_masks.append(motion_masks)
-        
-    #     # Concatenate all chunks
-    #     all_motion_masks = np.concatenate(all_motion_masks, axis=0)
-        
-    #     # Save predictions
-    #     self._save_davis_predictions(all_motion_masks, output_dir, seq_name)
-        
-    #     # Compute sequence metrics
-    #     seq_metrics = {
-    #         'sequence_name': seq_name,
-    #         'num_frames': len(video_frames),
-    #         'frame_metrics': frame_metrics,
-    #         'mean_iou': np.mean([m['iou'] for m in frame_metrics]),
-    #         'std_iou': np.std([m['iou'] for m in frame_metrics]),
-    #         'mean_f_score': np.mean([m['f_score'] for m in frame_metrics]),
-    #         'std_f_score': np.std([m['f_score'] for m in frame_metrics]),
-    #         'J & F': np.mean([(m['iou'] + m['f_score']) / 2.0 for m in frame_metrics])
-    #     }
-        
-    #     print(f"  Sequence metrics - IoU: {seq_metrics['mean_iou']:.4f}, "
-    #           f"  F-Score: {seq_metrics['mean_f_score']:.4f}, "
-    #           f"  J & F: {seq_metrics['J & F']:.4f}")
-        
-    #     return seq_metrics
-    
+   
     def _evaluate_single_sequence(self, seq_name, frames_dir, gt_dir, 
                           output_dir, sequence_length, 
                           use_sam_refine, max_frames, stride=4):
@@ -390,8 +306,8 @@ class DAVISEvaluator:
         all_video_frames = [None] * len(all_frame_files)
         
         # Build predictor
-        model_config = 'configs/sam2.1/sam2.1_hiera_l.yaml'
-        checkpoint = '/data0/hexiankang/code/SegAnyMo/sam2-main/checkpoints/sam2.1_hiera_large.pt'
+        model_config = self.sam2_config_path or os.environ.get("SAM2_CONFIG_PATH", DEFAULT_SAM2_CONFIG_PATH)
+        checkpoint = self.sam2_checkpoint_path or os.environ.get("SAM2_CHECKPOINT_PATH", DEFAULT_SAM2_CHECKPOINT_PATH)
     
         predictor = build_sam.build_sam2_video_predictor(
             model_config, checkpoint, device='cuda'
@@ -490,15 +406,15 @@ class DAVISEvaluator:
         self, seq_name, frames_dir, gt_dir,
         output_dir, sequence_length,
         use_sam_refine, max_frames,
-        rgb_from_gt: bool = False,                 # 新增选项
-        rgb_exts=(".jpg", ".jpeg", ".png")         # 可选扩展名
+        rgb_from_gt: bool = False,                 # Use only RGB frames with matching GT masks
+        rgb_exts=(".jpg", ".jpeg", ".png")         # Candidate RGB file extensions to search
     ):
         """
-        rgb_from_gt=True: 仅选择存在 GT 的 RGB 帧
-        rgb_from_gt=False: 选择 frames_dir 下全部 RGB 帧
+        rgb_from_gt=True: only use RGB frames that have matching GT masks.
+        rgb_from_gt=False: use all RGB frames found under frames_dir.
         """
 
-        # 先读 GT 列表并建立映射
+        # Load GT file names and build a lookup map first.
         gt_files = sorted(
             [f for f in os.listdir(gt_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))],
             key=_natural_key
@@ -517,9 +433,9 @@ class DAVISEvaluator:
         gt_height, gt_width = next(iter(gt_mask_dict.values())).shape
         print(f"  GT mask size: {gt_width}x{gt_height}")
 
-        # 决定取哪些 RGB 帧
+        # Select RGB frames either from GT names or from all frames in frames_dir.
         if rgb_from_gt:
-            # 只按 GT 名字去 frames_dir 里找对应 RGB 文件
+            # Match RGB files in frames_dir using GT mask file stems.
             selected_frame_files = []
             missing_rgb = []
             for stem in sorted(gt_mask_dict.keys(), key=_natural_key):
@@ -529,7 +445,7 @@ class DAVISEvaluator:
                     if os.path.exists(os.path.join(frames_dir, cand)):
                         found = cand
                         break
-                    # 兼容大小写扩展名
+                    # Also try uppercase extensions to handle mixed file naming.
                     cand2 = stem + ext.upper()
                     if os.path.exists(os.path.join(frames_dir, cand2)):
                         found = cand2
@@ -543,7 +459,7 @@ class DAVISEvaluator:
             if len(missing_rgb) > 0:
                 print(f"  Warning: {len(missing_rgb)} GT masks have no matched RGB. e.g. {missing_rgb[:5]}")
         else:
-            # 取全部 RGB 帧
+            # Use all RGB frames under frames_dir.
             all_frame_files = sorted(
                 [f for f in os.listdir(frames_dir) if f.lower().endswith(rgb_exts)],
                 key=_natural_key
@@ -558,8 +474,6 @@ class DAVISEvaluator:
 
         print(f"  Total RGB frames used: {len(all_frame_files)}, GT masks: {len(gt_mask_dict)}")
         
-        # Split into 4 groups with stride 4
-        # frame_groups = [all_frame_files[i::8] for i in range(8)]
         frame_groups = [all_frame_files]
         print(f"  Frame group sizes: {[len(g) for g in frame_groups]}")
 
@@ -574,7 +488,6 @@ class DAVISEvaluator:
         
         # Process each group independently for inference
         for group_idx, frame_group in enumerate(frame_groups):
-            # print(f"  Processing group {group_idx + 1}/8 ({len(frame_group)} frames)...")
             print(f"  Processing group {group_idx + 1}/1 ({len(frame_group)} frames)...")
             
             # Load frames for this group
@@ -662,15 +575,14 @@ class DAVISEvaluator:
         
         # Save all predictions
         self._save_davis_predictions(
-            all_motion_masks_array, 
-            output_dir, 
-            seq_name, 
+            all_motion_masks_array,
+            output_dir,
+            seq_name,
             original_frame_sizes,
-            frames_dir=frames_dir,  # 传入原始帧目录
-            all_frame_files=all_frame_files,  # 传入帧文件列表
-            save_overlay=True  # 启用可视化
+            frames_dir=frames_dir,      # Original frame directory
+            all_frame_files=all_frame_files,  # Full frame filename list
+            save_overlay=True           # Save overlay visualizations
         )
-        # Compute sequence metrics
         seq_metrics = {
             'sequence_name': seq_name,
             'num_frames': len(frame_metrics),
@@ -715,12 +627,12 @@ class DAVISEvaluator:
     
     def _refine_with_sam(self, chunk_frames, motion_masks, strategy=True, predictor=None):
         """Apply SAM2 refinement to masks"""
-        assert predictor is not None, "predictor 不能为空（外面 build 一次传进来）"
+        assert predictor is not None, "predictor must be provided (build it once outside and pass it in)."
 
         # motion_masks: numpy [T,H,W]
         T, mask_h, mask_w = motion_masks.shape
 
-        # ---- frames -> tensor [T,3,H,W] on CPU (只用于写盘，不必上 GPU) ----
+        # ---- frames -> tensor [T,3,H,W] on CPU (only used for SAM preprocessing / temporary files) ----
         frame_arrays = []
         for pil_img in chunk_frames:
             pil_img_resized = pil_img.resize((mask_w, mask_h), Image.BILINEAR)
@@ -731,10 +643,10 @@ class DAVISEvaluator:
         frame_tensors = torch.from_numpy(frame_arrays).float() # CPU
         frame_tensors = frame_tensors.permute(0, 3, 1, 2)      # [T,3,H,W]
 
-        # ✅ refined_masks 必须放 CUDA（因为 refine_sam 内部输出是 CUDA）
+        # refine_sam writes CUDA tensors internally, so keep the output buffer on CUDA.
         refined_masks = torch.zeros((T, mask_h, mask_w), dtype=torch.float32, device="cuda")
 
-        # ✅ mask_list 直接用 numpy（preprocess_mask 会处理）
+        # Keep mask_list as numpy; preprocess_mask in refine_sam handles conversion.
         mask_list = motion_masks
 
         refine_sam(
@@ -790,18 +702,7 @@ class DAVISEvaluator:
         )
         return np.array(mask_img_resized) / 255.0
     
-    # def _save_davis_predictions(self, all_motion_masks, output_dir, seq_name):
-    #     """Save predictions as PNG masks (DAVIS format)"""
-    #     pred_dir = os.path.join(output_dir, 'predictions')
-    #     os.makedirs(pred_dir, exist_ok=True)
-        
-    #     for i, mask in enumerate(all_motion_masks):
-    #         # Convert to 0-255 range
-    #         mask_uint8 = (mask * 255).astype(np.uint8)
-            
-    #         # Save as PNG
-    #         mask_img = Image.fromarray(mask_uint8, mode='L')
-    #         mask_img.save(os.path.join(pred_dir, f'{i:05d}.png'))
+
 
     def _save_davis_predictions(self, all_motion_masks, output_dir, seq_name, 
                             original_frame_sizes, frames_dir=None, 
@@ -1032,56 +933,7 @@ class DAVISEvaluator:
         print("="*60 + "\n")
 
 
-# 使用示例
-# if __name__ == "__main__":
-#     evaluator = DAVISEvaluator(
-#         # model_path="/data0/hexiankang/code/SegAnyMo/logs/motion_pi3_conf_flow_ytvos/best_model.pth",
-#         model_path="/data0/hexiankang/code/SegAnyMo/logs/motion_pi3_conf_lowfeature_35_flow_ytvos/best_model.pth",
-#         # model_path="/data0/hexiankang/code/SegAnyMo/logs/motion_pi3_conf_low_35_flow_ytvos_wo_omni/best_model.pth",
-#         # model_path="/data0/hexiankang/code/SegAnyMo/logs/motion_pi3_conf_low_35_flow_ytvos_wo_omni_got/best_model.pth",
-#         # model_path="/data0/hexiankang/code/SegAnyMo/logs/motion_pi3_conf_low_35_flow_ytvos_wo_omni_got_vos/best_model.pth",
-#         # model_path="/data0/hexiankang/code/SegAnyMo/logs/motion_pi3_conf_low_35_flow_ytvos_wo_omni_got_vos_dynamic/best_model.pth",
-#         output_base_dir="eval/motion_pi3_low_35_conf_flow_2017-M_wo_sam",
-#         # output_base_dir="eval/motion_pi3_low_35_conf_flow_2017-M_wo_omni_got",
-#         # output_base_dir="eval/motion_pi3_low_35_conf_flow_2017-M_wo_omni_got_vos",
-#         # output_base_dir="eval/motion_pi3_low_35_conf_flow_2017-M_wo_omni_got_vos_dynamic",
-#     )
-#     # 评估 DAVIS 数据集
-#     dataset_metrics = evaluator.evaluate_davis(
-#         image_root="/data0/hexiankang/code/SegAnyMo/data/DAVIS2017-M/DAVIS/JPEGImages/480p",
-#         annotation_root="/data0/hexiankang/code/SegAnyMo/data/DAVIS2017-M/DAVIS/Annotations/480p",
-#         sequence_length=32,
-#         use_sam_refine=False,
-#         davis='2017-M' # '2017-M' # 2016-M  2016
-#     )
-
-#     # 评估 DAVIS 数据集
-#     # dataset_metrics = evaluator.evaluate_davis(
-#     #     image_root="/data0/hexiankang/code/SegAnyMo/data/DAVIS2017-M/DAVIS/JPEGImages/480p",
-#     #     annotation_root="/data0/hexiankang/code/SegAnyMo/data/DAVIS2017-M/DAVIS/Annotations/480p",
-#     #     sequence_length=32,
-#     #     use_sam_refine=True,
-#     #     davis='2016' # '2017-M' # 2016
-#     # )
-
-#     # dataset_metrics = evaluator.evaluate_davis(
-#     #     image_root="/data0/hexiankang/code/SegAnyMo/data/FBMS59_final/JPEGImages",
-#     #     annotation_root="/data0/hexiankang/code/SegAnyMo/data/FBMS59_final/Annotations",
-#     #     sequence_length=32,
-#     #     use_sam_refine=True,
-#     #     davis='fbms' # '2017-M' # 2016
-#     # )
-
-#     # dataset_metrics = evaluator.evaluate_davis(
-#     #     image_root="/data0/hexiankang/code/SegAnyMo/data/SegTrackv2/JPEGImages",
-#     #     annotation_root="/data0/hexiankang/code/SegAnyMo/data/SegTrackv2/GroundTruth",
-#     #     sequence_length=32,
-#     #     use_sam_refine=True,
-#     #     davis='segtrack' # '2017-M' # 2016
-#     # )
-    
-#     print(f"\n平均IoU: {dataset_metrics['mean_iou']:.4f}")
-#     print(f"平均F-Score: {dataset_metrics['mean_f_score']:.4f}")
+# Legacy local example block removed to avoid hard-coded paths in the open-source version.
 
 import argparse
 def main():
@@ -1089,6 +941,12 @@ def main():
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model .pth file")
     parser.add_argument("--pi3_model_path", type=str, default=None,
                         help="Path to pi3 .safetensors checkpoint. If omitted, use PI3_MODEL_PATH env var.")
+    parser.add_argument("--raft_model_path", type=str, default=None,
+                        help="Path to RAFT checkpoint. If omitted, use RAFT_MODEL_PATH env var.")
+    parser.add_argument("--sam2_config_path", type=str, default=None,
+                        help="Path to SAM2 config yaml. If omitted, use SAM2_CONFIG_PATH env var.")
+    parser.add_argument("--sam2_checkpoint_path", type=str, default=None,
+                        help="Path to SAM2 checkpoint. If omitted, use SAM2_CHECKPOINT_PATH env var.")
     parser.add_argument("--output_dir", type=str, required=True, help="Directory to save evaluation results")
     parser.add_argument("--image_root", type=str, required=True, help="Path to image directory")
     parser.add_argument("--annotation_root", type=str, required=True, help="Path to annotation directory")
@@ -1105,14 +963,17 @@ def main():
         print(f"{k:20s}: {v}")
     print("==============================================\n")
 
-    # 初始化评估器
+    # Initialize evaluator
     evaluator = DAVISEvaluator(
         model_path=args.model_path,
         output_base_dir=args.output_dir,
         pi3_model_path=args.pi3_model_path,
+        raft_model_path=args.raft_model_path,
+        sam2_config_path=args.sam2_config_path,
+        sam2_checkpoint_path=args.sam2_checkpoint_path,
     )
 
-    # 调用评估函数
+    # Run evaluation
     dataset_metrics = evaluator.evaluate_davis(
         image_root=args.image_root,
         annotation_root=args.annotation_root,
