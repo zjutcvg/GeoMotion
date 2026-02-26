@@ -119,7 +119,7 @@ train_root:
   - /path/to/got_train_video_roots_with_masks.txt
   - /path/to/DynamicVerse
 ```
-⚠️ Important: We will gradually upload the annotations for GOT10k and GOTMoving.
+> ⚠️ Important: We will gradually upload the annotations for GOT10k and GOTMoving.
 
 ## 🚀 4. Inference and Visualization
 
