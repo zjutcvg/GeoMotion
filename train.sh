@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+# set -euo pipefail
 
 CUDA_DEVICE=${CUDA_DEVICE:-0}
 MASTER_PORT=${MASTER_PORT:-29502}

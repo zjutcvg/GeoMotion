@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+# set -euo pipefail
 
 ROOT_DIR=${ROOT_DIR:-$(cd "$(dirname "$0")" && pwd)}
 CUDA_DEVICE=${CUDA_DEVICE:-0}
