@@ -255,6 +255,7 @@ This project builds on and benefits from the following excellent open-source wor
 
 - [Pi3](https://github.com/yyfz/Pi3)
 - [SegAnyMotion](https://github.com/nnanhuang/SegAnyMo)
+- [RoMo](https://github.com/google-deepmind/romo)
 - [OCLR](https://github.com/Jyxarthur/OCLR_model)
 - [VGGT](https://github.com/facebookresearch/vggt)
 - [Easi3R](https://github.com/Inception3D/Easi3R/tree/main)
