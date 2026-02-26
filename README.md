@@ -36,7 +36,7 @@
 We present **GeoMotion**, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It elegantly combines 4D geometric priors from a pretrained reconstruction model ($\pi^3$) with local pixel-level motion from optical flow. This enables the disentanglement of object motion from camera motion in a single pass.
 
 <!-- TODO: Add your pipeline/architecture image here -->
-![Pipeline](assets/method.pdf)
+![Pipeline](assets/method.jpg)
 
 ## 🔥 News / Updates
 
