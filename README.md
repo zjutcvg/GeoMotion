@@ -26,8 +26,8 @@
 [![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-FFD21E)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-<img src="assets/movie.mp4" width="100%" alt="GeoMotion Teaser"/>
-*GeoMotion effectively disentangles object motion from camera motion by leveraging 4D geometric priors.*
+<!-- <img src="assets/method.pdf" width="100%" alt="GeoMotion Teaser"/> -->
+<!-- *GeoMotion effectively disentangles object motion from camera motion by leveraging 4D geometric priors.* -->
 
 </div>
 
@@ -36,7 +36,7 @@
 We present **GeoMotion**, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It elegantly combines 4D geometric priors from a pretrained reconstruction model ($\pi^3$) with local pixel-level motion from optical flow. This enables the disentanglement of object motion from camera motion in a single pass.
 
 <!-- TODO: Add your pipeline/architecture image here -->
-<!-- ![Pipeline](assets/pipeline.png) -->
+![Pipeline](assets/method.pdf)
 
 ## 🔥 News / Updates
 
