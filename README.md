@@ -24,7 +24,7 @@
 <!-- Badges -->
 [![arXiv](https://img.shields.io/badge/arXiv-TODO-b31b1b.svg)](http://arxiv.org/abs/2602.21810)
 [![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-FFD21E)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth)
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <img src="assets/movie.mp4" width="100%" alt="GeoMotion Teaser"/>
 *GeoMotion effectively disentangles object motion from camera motion by leveraging 4D geometric priors.*
