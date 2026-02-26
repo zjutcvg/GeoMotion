@@ -264,10 +264,13 @@ This project builds on and benefits from the following excellent open-source wor
 If you find GeoMotion useful for your research or applications, please cite using this BibTeX:
 
 ```bibtex
-@article{he2026geomotion,
-  title={GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry},
-  author={He, Xiankang and Lin, Peile and Cui, Ying and Guo, Dongyan and Shen, Chunhua and Zhang, Xiaoqin},
-  journal={arXiv preprint arXiv:TODO},
-  year={2026}
+@misc{he2026geomotion,
+      title={GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry}, 
+      author={Xiankang He and Peile Lin and Ying Cui and Dongyan Guo and Chunhua Shen and Xiaoqin Zhang},
+      year={2026},
+      eprint={2602.21810},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2602.21810}, 
 }
 ```
