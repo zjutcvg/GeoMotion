@@ -578,7 +578,9 @@ class MotionSegmentationDatasetGotmoving(Dataset):
             # 3. 转为 torch.from_numpy().long()
             
             m_np = np.array(mask, dtype=np.int64) # (H, W)
-            t_mask = torch.from_numpy(m_np).long() # 必须是 Long 类型用于 ID
+            m_np_binary = (m_np > 0).astype(np.int64)  # 布尔值转int64，True→1，False→0
+            # t_mask = torch.from_numpy(m_np_binary).long() # 必须是 Long 类型用于 ID
+            t_mask = torch.from_numpy(m_np_binary) # 必须是 Long 类型用于 ID
             
             images_tensor.append(t_img)
             masks_tensor.append(t_mask)
@@ -865,7 +867,7 @@ def save_random_samples(dataset, n=5, out_root="debug_aug", max_frames=8):
 class MotionSegConfig:
     def __init__(self):
         # Data settings
-        self.data_dir = "/data2/hxk/Recon/SegAnyMo/data/HOI4D"
+        self.data_dir = "/data2"
         self.img_size = 518
         self.sequence_length = 8  # Number of frames per sample
         self.sample_stride = 1    # Frame sampling stride

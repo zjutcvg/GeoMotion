@@ -358,81 +358,81 @@ class MotionSegmentationDatasetDynamic(Dataset):
         masks = []
         
         # ---------------ID-------------------
-        for img, mask in zip(pil_images, pil_masks):
-            # 1. 处理 Image
-            img_tensor = transforms.ToTensor()(img)
-            img_tensor = self.normalize(img_tensor)
-            images.append(img_tensor)
-            
-            # 2. 处理 Mask (RGB -> Instance ID)
-            # 确保 mask 是 numpy array (H, W, 3) 或 (H, W)
-            mask_np = np.array(mask) 
-            
-            if mask_np.ndim == 3 and mask_np.shape[2] == 3:
-                # === 情况 A: Mask 是 RGB 彩色图 ===
-                # 将 RGB 压缩成一个唯一的 int32 整数
-                # formula: R + G*256 + B*256*256
-                mask_id_map = mask_np[:, :, 0].astype(np.int64) + \
-                              mask_np[:, :, 1].astype(np.int64) * 256 + \
-                              mask_np[:, :, 2].astype(np.int64) * 65536
-            else:
-                # === 情况 B: Mask 已经是单通道 (灰度图) ===
-                # 直接使用像素值 (比如你的 0, 189...)
-                if mask_np.ndim == 3: mask_np = mask_np.squeeze()
-                mask_id_map = mask_np.astype(np.int64)
-
-            # 转为 Tensor
-            mask_tensor = torch.from_numpy(mask_id_map).long()
-            
-            # === 核心步骤: ID 重映射 (Re-indexing) ===
-            # 我们需要把 [0, 189, 255...] 这种不连续的值变成 [0, 1, 2...]
-            # 0 必须保持为 0 (背景)
-            
-            # 获取所有唯一的 ID
-            unique_ids = torch.unique(mask_tensor)
-            
-            # 如果全是背景 0，则不需要处理
-            if len(unique_ids) == 1 and unique_ids[0] == 0:
-                new_mask = torch.zeros_like(mask_tensor)
-            else:
-                # 创建一个新的 mask
-                new_mask = torch.zeros_like(mask_tensor)
-                
-                # 重新分配 ID (从 1 开始，0 留给背景)
-                # 注意：假设原始数据中 0 就是背景。如果原始 RGB 中黑色(0,0,0)是背景，压缩后也是0。
-                current_id = 1
-                for uid in unique_ids:
-                    if uid == 0: continue # 背景保持 0
-                    
-                    new_mask[mask_tensor == uid] = current_id
-                    current_id += 1
-            
-            masks.append(new_mask)
-        # import pdb;pdb.set_trace()
-        # Stack
-        images = torch.stack(images, dim=0)
-        masks = torch.stack(masks, dim=0)
-        
-        return images, masks, triview_data
         # for img, mask in zip(pil_images, pil_masks):
-        #     # Convert image to tensor and normalize to [0, 1]
+        #     # 1. 处理 Image
         #     img_tensor = transforms.ToTensor()(img)
-        #     # Apply normalization
         #     img_tensor = self.normalize(img_tensor)
         #     images.append(img_tensor)
             
-        #     # Convert mask to tensor
-        #     mask_tensor = transforms.ToTensor()(mask)
-        #     mask_tensor = mask_tensor.squeeze(0)  # Remove channel dimension
-        #     # Ensure binary mask
-        #     mask_tensor = (mask_tensor > 0).float()
-        #     masks.append(mask_tensor)
-        
-        # # Stack into tensors [S, 3, H, W] and [S, H, W]
+        #     # 2. 处理 Mask (RGB -> Instance ID)
+        #     # 确保 mask 是 numpy array (H, W, 3) 或 (H, W)
+        #     mask_np = np.array(mask) 
+            
+        #     if mask_np.ndim == 3 and mask_np.shape[2] == 3:
+        #         # === 情况 A: Mask 是 RGB 彩色图 ===
+        #         # 将 RGB 压缩成一个唯一的 int32 整数
+        #         # formula: R + G*256 + B*256*256
+        #         mask_id_map = mask_np[:, :, 0].astype(np.int64) + \
+        #                       mask_np[:, :, 1].astype(np.int64) * 256 + \
+        #                       mask_np[:, :, 2].astype(np.int64) * 65536
+        #     else:
+        #         # === 情况 B: Mask 已经是单通道 (灰度图) ===
+        #         # 直接使用像素值 (比如你的 0, 189...)
+        #         if mask_np.ndim == 3: mask_np = mask_np.squeeze()
+        #         mask_id_map = mask_np.astype(np.int64)
+
+        #     # 转为 Tensor
+        #     mask_tensor = torch.from_numpy(mask_id_map).long()
+            
+        #     # === 核心步骤: ID 重映射 (Re-indexing) ===
+        #     # 我们需要把 [0, 189, 255...] 这种不连续的值变成 [0, 1, 2...]
+        #     # 0 必须保持为 0 (背景)
+            
+        #     # 获取所有唯一的 ID
+        #     unique_ids = torch.unique(mask_tensor)
+            
+        #     # 如果全是背景 0，则不需要处理
+        #     if len(unique_ids) == 1 and unique_ids[0] == 0:
+        #         new_mask = torch.zeros_like(mask_tensor)
+        #     else:
+        #         # 创建一个新的 mask
+        #         new_mask = torch.zeros_like(mask_tensor)
+                
+        #         # 重新分配 ID (从 1 开始，0 留给背景)
+        #         # 注意：假设原始数据中 0 就是背景。如果原始 RGB 中黑色(0,0,0)是背景，压缩后也是0。
+        #         current_id = 1
+        #         for uid in unique_ids:
+        #             if uid == 0: continue # 背景保持 0
+                    
+        #             new_mask[mask_tensor == uid] = current_id
+        #             current_id += 1
+            
+        #     masks.append(new_mask)
+        # # import pdb;pdb.set_trace()
+        # # Stack
         # images = torch.stack(images, dim=0)
         # masks = torch.stack(masks, dim=0)
         
         # return images, masks, triview_data
+        for img, mask in zip(pil_images, pil_masks):
+            # Convert image to tensor and normalize to [0, 1]
+            img_tensor = transforms.ToTensor()(img)
+            # Apply normalization
+            img_tensor = self.normalize(img_tensor)
+            images.append(img_tensor)
+            
+            # Convert mask to tensor
+            mask_tensor = transforms.ToTensor()(mask)
+            mask_tensor = mask_tensor.squeeze(0)  # Remove channel dimension
+            # Ensure binary mask
+            mask_tensor = (mask_tensor > 0).float()
+            masks.append(mask_tensor)
+        
+        # Stack into tensors [S, 3, H, W] and [S, H, W]
+        images = torch.stack(images, dim=0)
+        masks = torch.stack(masks, dim=0)
+        
+        return images, masks, triview_data
 
     def _get_frame_indices(self, total_frames):
         """Get start and end indices for frame sampling"""
@@ -577,7 +577,7 @@ def create_motion_seg_dataloader(cfg, split='train'):
 class MotionSegConfig:
     def __init__(self):
         # Data settings
-        self.data_dir = "/data2/hxk/Recon/SegAnyMo/data/HOI4D"
+        self.data_dir = "/data2"
         self.img_size = 518
         self.sequence_length = 8  # Number of frames per sample
         self.sample_stride = 1    # Frame sampling stride
