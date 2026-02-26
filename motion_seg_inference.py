@@ -974,16 +974,7 @@ class MotionSegmentationInference:
         checkpoint = torch.load(model_path, map_location=device)
         
         # Initialize model (you might need to adjust these parameters)
-        # from vggt.models.vggt_seg import MotionSegmentationVGGT
-        # from pi3.models.pi3_conf import create_pi3_motion_segmentation_model
-        # from pi3.models.pi3_conf_cam import create_pi3_motion_segmentation_model
-        # from pi3.models.pi3_conf_flow_cam import create_pi3_motion_segmentation_model
-        # from pi3.models.pi3_conf_points_attn import create_pi3_motion_segmentation_model
-        # from pi3.models.pi3_conf_flow_cam_lowfeature import create_pi3_motion_segmentation_model
         from pi3.models.pi3_conf_flow_cam_lowfeature_wo_mean import create_pi3_motion_segmentation_model
-        # from pi3.models.pi3_conf_flow_cam_lowfeature_4_segmask import create_pi3_motion_segmentation_model
-        # from pi3.models.pi3_conf_flow_cam_lowfeature import create_pi3_motion_segmentation_model
-        # from pi3.models.pi3_conf_flow_lowfeature_no_cam import create_pi3_motion_segmentation_model
         if pi3_model_path is None:
             pi3_model_path = os.environ.get("PI3_MODEL_PATH", None)
         self.model = create_pi3_motion_segmentation_model(
@@ -991,13 +982,6 @@ class MotionSegmentationInference:
         ).to(device)
         initialize_raft_model(device=device, raft_model_path=raft_model_path)
         
-        # Create PI3 model with motion cues
-        # from pi3.models.pi3_gate import create_pi3_motion_segmentation_model
-        # self.model = create_pi3_motion_segmentation_model(
-        #     pi3_model_path=None,  # Optional
-        #     freeze_backbone=True,
-        #     motion_feature_dim=64
-        # ).to(device)
         
         # Load trained weights
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -1110,28 +1094,6 @@ class MotionSegmentationInference:
         axes[0,0].set_title('Original Image')
         axes[0,0].axis('off')
 
-        # 瞬时运动蒙版叠加
-        # overlay_instant = np.zeros_like(image)
-        # overlay_instant[:, :, 0] = motion_mask_np
-        # instant_result = cv2.addWeighted(image, 0.7, overlay_instant, 0.6, 0)
-        # axes[0,1].imshow(instant_result)
-        # axes[0,1].set_title('Instant Motion (Red)')
-        # axes[0,1].axis('off')
-
-        # 累积运动蒙版叠加
-        # overlay_accumulated = np.zeros_like(image)
-        # overlay_accumulated[:, :, 1] = accumulated_mask_np
-        # accumulated_result = cv2.addWeighted(image, 0.7, overlay_accumulated, 0.6, 0)
-        # axes[0,2].imshow(accumulated_result)
-        # axes[0,2].set_title('Accumulated Motion (Green)')
-        # axes[0,2].axis('off')
-
-        # 深度权重可视化
-        # im_depth = axes[0,3].imshow(depth_weights_np, cmap='plasma', vmin=0, vmax=1)
-        # axes[0,3].set_title('Depth Weights')
-        # axes[0,3].axis('off')
-        # plt.colorbar(im_depth, ax=axes[0,3], shrink=0.7, label='Weight')
-
         # 'Motion Magnitude
         vmax = np.percentile(motion_magnitude_np[motion_magnitude_np > 0], 95) if np.any(motion_magnitude_np > 0) else 0.1
         im1 = axes[1,0].imshow(motion_magnitude_np, cmap='hot', vmin=0, vmax=vmax)
@@ -1139,41 +1101,6 @@ class MotionSegmentationInference:
         axes[1,0].axis('off')
         plt.colorbar(im1, ax=axes[1,0], shrink=0.7, label='Motion')
 
-        # 加权运动幅度
-        # weighted_motion = motion_magnitude_np * depth_weights_np
-        # vmax_weighted = np.percentile(weighted_motion[weighted_motion > 0], 95) if np.any(weighted_motion > 0) else 0.1
-        # im2 = axes[1,1].imshow(weighted_motion, cmap='hot', vmin=0, vmax=vmax_weighted)
-        # axes[1,1].set_title('Depth-Weighted Motion')
-        # axes[1,1].axis('off')
-        # plt.colorbar(im2, ax=axes[1,1], shrink=0.7, label='Weighted Motion')
-
-        # 对比：运动区域 vs 深度权重
-        # overlay_comparison = image.copy()
-        # motion_areas = motion_mask_np > 0
-        # high_weight_areas = depth_weights_np > 0.5
-        
-        # overlay_comparison[motion_areas] = [255, 0, 0]  # 红色：运动区域
-        # # overlay_comparison[high_weight_areas & ~motion_areas] = [0, 0, 255]  # 蓝色：高权重但无运动
-        # overlay_comparison[motion_areas & high_weight_areas] = [255, 255, 0]  # 黄色：运动+高权重
-        
-        # axes[1,2].imshow(overlay_comparison)
-        # axes[1,2].set_title('Motion vs Depth\n(Red:Motion, Blue:HighWeight, Yellow:Both)')
-        # axes[1,2].axis('off')
-
-        # 统计信息
-        # instant_motion_pixels = motion_mask.sum().item()
-        # accumulated_motion_pixels = accumulated_mask.sum().item()
-        # total_pixels = motion_mask.numel()
-        # avg_depth_weight = depth_weights.mean().item()
-        
-        # stats_text = f"Instant Motion: {instant_motion_pixels} px ({instant_motion_pixels/total_pixels*100:.1f}%)\n"
-        # stats_text += f"Accumulated: {accumulated_motion_pixels} px ({accumulated_motion_pixels/total_pixels*100:.1f}%)\n"
-        # stats_text += f"Avg Motion: {motion_magnitude_np.mean():.4f}\n"
-        # stats_text += f"Avg Depth Weight: {avg_depth_weight:.3f}\n"
-        # stats_text += f"Motion in Near Field: {((motion_mask & (depth_weights > 0.5)).sum().item() / max(motion_mask.sum().item(), 1) * 100):.1f}%"
-        
-        # axes[1,3].text(0.1, 0.7, stats_text, transform=axes[1,3].transAxes, 
-        #             fontsize=9, verticalalignment='top', fontfamily='monospace')
         axes[1,3].set_xlim(0, 1)
         axes[1,3].set_ylim(0, 1)
         axes[1,3].set_title('Statistics')
@@ -1236,129 +1163,10 @@ class MotionSegmentationInference:
                 fusion_method='max'
             )  # [B, N, H, W]
 
-             # Visualize optical flow and save the results
-            # vis_images = visualize_optical_flow(flow_magnitudes, video_tensor, self.device, alpha=0.5, colormap='jet')
-            
-            # # Save each frame's flow visualization
-            # B, N, H, W, _ = vis_images.shape
-            # for b in range(B):
-            #     for t in range(N):
-            #         # Convert tensor to numpy and save as image
-            #         frame_image = vis_images[b, t].cpu().numpy()  # [H, W, 3]
-            #         filename = os.path.join('flow', f"video_{b}_frame_{t}_flow.png")
-            #         cv2.imwrite(filename, cv2.cvtColor(frame_image, cv2.COLOR_RGB2BGR))  # Save as BGR format
-            # import pdb;pdb.set_trace()
-
             # predictions = self.model(video_tensor)
             predictions = self.model(video_tensor, flow_magnitudes)
             motion_mask = predictions['motion_mask']  # [1, S, H, W]
             motion_mask = motion_mask.squeeze(0).cpu().numpy()  # [S, H, W]
-
-            # # 将PIL图像转换为numpy数组
-            # video_frames_np = [np.array(img) for img in video_frames]
-            # mask_h, mask_w = motion_mask.shape[1:]
-            
-            # # Resize video_frames_np到mask的分辨率
-            # video_frames_np_resized = [
-            #     cv2.resize(frame, (mask_w, mask_h), interpolation=cv2.INTER_LINEAR)
-            #     for frame in video_frames_np
-            # ]
-            
-        #     masks_high, masks_low, trusted = find_partial_motion(
-        #         video_frames_np_resized,
-        #         RAFT_MODEL,
-        #         pred_masks=motion_mask,
-        #         device=self.device,
-        #     )
-        # return masks_high.detach().cpu().numpy()
-
-            # motion_mask = predictions['motion_prior_weights']  # [1, S, H, W]
-            
-        #     # Remove batch dimension and move to CPU
-        #     motion_mask = motion_mask.squeeze(0).cpu().numpy()  # [S, H, W]
-        #     # 可视化和保存
-        #     print("Visualizing and saving improved results...")
-        #     # self.save_motion_mask(motion_mask)
-        #     # import pdb;pdb.set_trace()
-            
-        #     results = motion_mask
-        # return results
-
-
-            #-------------------- Pi3 部分 ----------------
-            # 第一步：backbone
-            # hidden, pos, dino, (B, N, H, W) = self.model.forward_backbone(video_tensor)
-
-            # # 第二步：points/conf/camera
-            # points, local_points, conf, camera_poses = self.model.forward_heads(hidden, pos, B, N, H, W)
-
-            # pi3_outputs = {
-            #     'points': points.squeeze(0),
-            #     'local_points': local_points.squeeze(0),
-            #     'conf': torch.sigmoid(conf.squeeze(0)),
-            #     'camera_poses': camera_poses.squeeze(0),
-            # }
-
-            # # ================= Motion 部分 =================
-
-            # motion_params = {
-            #     'window_size': 6,
-            #     'motion_threshold': 0.005,
-            #     'confidence_threshold': 0.01,
-            #     'adaptive_threshold_factor': 2.0,
-            #     'decay_factor': 0.9,
-            #     'min_accumulated_score': 0.08,
-            # }
-
-            # results = process_video_with_improved_sliding_window(pi3_outputs, **motion_params)
-
-            # motion_prior_weights = torch.stack(
-            #     [results[i]['motion_magnitude'] for i in range(len(results))],
-            #     dim=0
-            # ).unsqueeze(0).to(self.device)  # [B, N, H, W]
-            # motion_prior_weights = None
-            # with torch.no_grad():
-            #     # 获取光流配置
-            #     flow_config = {}
-            #     use_bidirectional = True
-            #     fusion_method = 'max'  # 'max', 'mean', 'sum', 'weighted_mean'
-            #     use_temporal_smoothing =  False
-            #     temporal_weight = 0.8
-                
-            #     if use_temporal_smoothing:
-            #         # 使用时间一致性的双向光流
-            #         motion_prior_weights = compute_bidirectional_flow_with_temporal_consistency(
-            #             video_tensor, self.device, temporal_weight
-            #         )
-            #     else:
-            #         # 标准双向光流
-            #         flow_magnitudes = compute_optical_flow_magnitude_batch(
-            #             video_tensor, self.device, 
-            #             bidirectional=use_bidirectional,
-            #             fusion_method=fusion_method
-            #         )  # [B, N, H, W]
-            #         # flow_mags, obj_motion, static_regions, trusted = \
-            #         #     compute_optical_flow_magnitude_batch_with_camera_comp(video_tensor,
-            #         #                                                             self.device,1)
-
-            #     # 归一化光流幅度
-            #     flow_config = {}
-            #     norm_method = 'percentile'
-            #     norm_percentile = 95
-            #     import pdb;pdb.set_trace()
-                
-            #     motion_prior_weights = normalize_flow_magnitudes(
-            #         flow_magnitudes, 
-            #         method=norm_method,
-            #         percentile=norm_percentile,
-            #         min_val=0.0, 
-            #         max_val=1.0
-            #     )
-            # visualize_images_and_motion(video_tensor, flow_magnitudes)
-            # # motion 分支推理
-
-            # results = self.model.forward_motion(hidden, pos, motion_prior_weights, dino, B, N, H, W)
-            # motion_mask = results['refined_motion_mask'].squeeze(0).cpu().numpy()  # [S, H, W]
 
         return motion_mask
     
@@ -1454,46 +1262,6 @@ def visualize_motion_segmentation(images, motion_masks, save_dir, sequence_name=
     os.makedirs(frame_dir, exist_ok=True)
     # import pdb; pdb.set_trace()
     
-    # for i, (img, mask) in enumerate(zip(images, motion_masks)):
-    #     # Resize mask to match original image size
-    #     orig_w, orig_h = img.size
-    #     mask_resized = cv2.resize(mask, (orig_w, orig_h), interpolation=cv2.INTER_LINEAR)
-        
-    #     # Create visualization
-    #     fig, axes = plt.subplots(1, 4, figsize=(16, 4))
-        
-    #     # Original image
-    #     axes[0].imshow(img)
-    #     axes[0].set_title(f'Frame {i:03d}')
-    #     axes[0].axis('off')
-        
-    #     # Motion mask (raw)
-    #     axes[1].imshow(mask_resized, cmap='hot', vmin=0, vmax=1)
-    #     axes[1].set_title(f'Motion Mask (Raw)')
-    #     axes[1].axis('off')
-        
-    #     # Binary mask
-    #     binary_mask = (mask_resized > threshold).astype(np.float32)
-    #     axes[2].imshow(binary_mask, cmap='gray', vmin=0, vmax=1)
-    #     axes[2].set_title(f'Binary Mask (t={threshold})')
-    #     axes[2].axis('off')
-        
-    #     # Overlay
-    #     img_array = np.array(img)
-    #     # Create colored mask overlay (red for motion)
-    #     overlay = img_array.copy()
-    #     motion_pixels = mask_resized > threshold
-    #     overlay[motion_pixels] = overlay[motion_pixels] * (1 - overlay_alpha) + \
-    #                             np.array([255, 0, 0]) * overlay_alpha
-        
-    #     axes[3].imshow(overlay.astype(np.uint8))
-    #     axes[3].set_title('Motion Overlay')
-    #     axes[3].axis('off')
-        
-    #     plt.tight_layout()
-    #     plt.savefig(os.path.join(frame_dir, f'frame_{i:03d}.png'), 
-    #                dpi=150, bbox_inches='tight')
-    #     plt.close()
     
     # Create summary grid visualization
     create_summary_grid(images, motion_masks, save_dir, sequence_name, threshold)
@@ -1731,91 +1499,6 @@ def split_components(mask_t, min_area=64):
             
     return comps
 
-# def refine_sam(frame_tensors, mask_list, p_masks_sam, offset=0):
-#     """Refine the final motion masks with SAM2 using Connected Components strategy.
-
-#     Args:
-#       frame_tensors: video frames [T, 3, H, W]
-#       mask_list: list/tensor of coarse motion masks [T, H, W]
-#       p_masks_sam: output buffer to store refined masks
-#       offset: video frame offset
-#     """
-#     model_config = 'configs/sam2.1/sam2.1_hiera_l.yaml'
-#     checkpoint = '/data0/hexiankang/code/SegAnyMo/sam2-main/checkpoints/sam2.1_hiera_large.pt'
-    
-#     # 构建 Predictor
-#     predictor = build_sam.build_sam2_video_predictor(
-#         model_config, checkpoint, device='cuda'
-#     )
-
-#     # 1. 准备图片数据 (SAM2 需要图片路径作为输入)
-#     tmp_dir = tempfile.mkdtemp()
-#     for i in range(frame_tensors.shape[0]):
-#         # [3, H, W] -> [H, W, 3]
-#         frame = frame_tensors[i].permute(1, 2, 0).cpu().numpy()
-#         # RGB -> BGR for OpenCV
-#         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-#         img_path = os.path.join(tmp_dir, f'{i:05}.jpg')
-#         cv2.imwrite(img_path, np.uint8(frame * 255))
-
-#     # 2. 推理主循环
-#     with torch.inference_mode(), torch.autocast('cuda', dtype=torch.bfloat16):
-#         inference_state = predictor.init_state(tmp_dir)
-        
-#         # 重置状态
-#         predictor.reset_state(inference_state)
-        
-#         current_obj_id = 1 # 全局 obj_id 计数器
-        
-#         # === 核心修改：每一帧都做连通域分解并加入 Prompt ===
-#         # 遍历所有帧
-#         for idx in range(mask_list.shape[0]):
-#             current_mask = mask_list[idx]
-            
-#             # 分离连通域
-#             comps = split_components(current_mask, min_area=64)
-            
-#             # 如果这一帧没有前景，就不加 mask，SAM2 会根据时序自动处理或留空
-#             for comp in comps:
-#                 # 将每个连通域作为一个独立的对象 ID 传入
-#                 predictor.add_new_mask(
-#                     inference_state,
-#                     frame_idx=idx,
-#                     obj_id=current_obj_id,
-#                     mask=comp
-#                 )
-#                 current_obj_id += 1
-
-#         # === 传播与合并 ===
-#         # 即使我们每一帧都给了 Prompt，调用 propagate 依然有意义：
-#         # 它会利用 SAM2 的时序平滑能力来优化边缘，并处理 Prompt 之间的细微不一致。
-#         for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(inference_state, start_frame_idx=0):
-            
-#             # 如果当前帧没有任何预测对象，跳过 (Mask 保持全 0)
-#             if len(out_obj_ids) == 0:
-#                 continue
-
-#             # 合并所有对象的 Mask (Union 操作)
-#             # out_mask_logits: [N_obj, 1, H, W]
-#             final_mask = None
-            
-#             for i in range(len(out_obj_ids)):
-#                 # 获取第 i 个对象的 logit
-#                 logit = out_mask_logits[i] # [1, H, W]
-#                 pred_mask = (logit > 0.0)  # Binary mask [1, H, W]
-                
-#                 if final_mask is None:
-#                     final_mask = pred_mask
-#                 else:
-#                     final_mask = final_mask | pred_mask # Bitwise OR
-
-#             # 将结果存入 p_masks_sam
-#             if final_mask is not None:
-#                 # 确保是 float 类型存入
-#                 p_masks_sam[offset + out_frame_idx] = final_mask[0].float()
-
-#     # 清理临时文件
-#     shutil.rmtree(tmp_dir)
 
 def preprocess_mask(mask_tensor, threshold=0.8):
     # 1. 二值化

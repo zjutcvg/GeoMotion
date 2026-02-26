@@ -410,14 +410,6 @@ def setup_motion_seg_dataset(cfg):
                 sequence_length=cfg.sequence_length,
                 sample_stride=2 #cfg.get('sample_stride', 4)
             )
-
-            # 创建验证集
-            # test_dataset = OminiWorldDataset(
-            #     data_dir="/data1/OminiWorld/annotations/OmniWorld-Game", 
-            #     split='val',
-            #     sample_stride=8,
-            #     enable_augmentation=False
-            # )
             
         test_loader = DataLoader(
             test_dataset,
@@ -435,14 +427,6 @@ def setup_motion_seg_dataset(cfg):
 
 def setup_motion_seg_model(cfg, device):
     """Setup motion segmentation model"""
-    # model = MotionSegmentationVGGT(
-    #     vggt_model_path=cfg.vggt_model_path,
-    #     img_size=cfg.img_size,
-    #     patch_size=cfg.patch_size,
-    #     embed_dim=cfg.embed_dim,
-    #     freeze_backbone=cfg.freeze_backbone
-    # )
-    # return model
 
     # Prefer config paths and fall back to environment variables for reproducibility.
     pi3_model_path = getattr(cfg, "vggt_model_path", None) or os.environ.get("PI3_MODEL_PATH", None)
@@ -453,13 +437,6 @@ def setup_motion_seg_model(cfg, device):
         pi3_model_path=pi3_model_path,
     )
     initialize_raft_model(device=device, raft_model_path=raft_model_path)
-    # model = create_pi3_motion_segmentation_model(
-    #     pi3_model_path="/data0/hexiankang/code/SegAnyMo/model.safetensors",
-    #     use_dino_features=True,
-    #     pooling_type='soft',  # 推荐使用软池化
-    #     target_feature_dim=64,
-    #     dino_feature_dim=384  # 根据您的DINO模型调整
-    # )
     return model
 
 def visualize_conf_on_images(images, conf, idx=0, save_path=None):
@@ -700,15 +677,6 @@ def test_motion_seg_epoch(cfg, model, test_loader, device, logger=None, vis_dir=
                 fusion_method='max'
             )  # [B, N, H, W]
 
-            # 归一化光流幅度
-            # flows = normalize_flow_magnitudes(
-            #     flow_magnitudes, 
-            #     method='percentile',
-            #     percentile=95,
-            #     min_val=0.0, 
-            #     max_val=1.0
-            # )
-
             prediction = model(images, flow_magnitudes)
             motion_pred = prediction['motion_mask']  # [B, N, H, W]
   
@@ -833,10 +801,7 @@ def main(cfg):
     original_model = model.module if world_size > 1 else model
     if cfg.freeze_backbone:
         # Only optimize motion-related parameters when backbone is frozen
-        # motion_params = list(original_model.motion_decoder.parameters()) + \
-        #             list(original_model.motion_head.parameters())+ \
-        #             list(original_model.feature_gating.parameters())
-        
+
         motion_params = list(original_model.conf_decoder.parameters()) + \
                 list(original_model.conf_head.parameters()) + \
                 list(original_model.motion_aware_decoder.parameters())
