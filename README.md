@@ -1,6 +1,6 @@
 ﻿<div align="center">
 
-<h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
+<h1>[CVPR26] GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
 
 <div>
     <a href='https://github.com/shuiyued' target='_blank'>Xiankang He</a><sup>1,2</sup>&emsp;
