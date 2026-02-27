@@ -3,7 +3,7 @@
 <h1>GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
 
 <div>
-    <a href='#' target='_blank'>Xiankang He</a><sup>1,2</sup>&emsp;
+    <a href='https://github.com/shuiyued' target='_blank'>Xiankang He</a><sup>1,2</sup>&emsp;
     <a href='#' target='_blank'>Peile Lin</a><sup>1,2</sup>&emsp;
     <a href='#' target='_blank'>Ying Cui</a><sup>1,2</sup>&emsp;
     <a href='#' target='_blank'>Dongyan Guo</a><sup>1,2*</sup>&emsp;
