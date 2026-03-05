@@ -192,23 +192,6 @@ bash eval.sh
 
 Default evaluated datasets: `2016-M, 2017-M, 2016, segtrack, fbms`.
 
-Customizing batch evaluation (`DATASETS_CSV`):
-
-```bash
-# Evaluate only DAVIS 2016 and FBMS
-DATASETS_CSV=2016,fbms bash eval.sh
-
-# Evaluate one dataset with a custom model
-MODEL_NAME=my_run \
-MODEL_PATH=logs/my_run/best_model.pth \
-DATASETS_CSV=segtrack \
-bash eval.sh
-```
-
-If your datasets are not under the default `data/` layout, either:
-
-- set `ROOT_DIR` to your repo root (default is the script directory), or
-- edit the dataset path mapping inside `eval.sh` (`resolve_dataset_roots()`).
 
 ## 🏃‍♂️ 6. Training
 
@@ -226,13 +209,6 @@ Edit `configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml`:
 ```bash
 bash train.sh
 ```
-
-`train.sh` supports these environment variables:
-
-- `CUDA_DEVICE`
-- `MASTER_PORT`
-- `NPROC_PER_NODE`
-- `CONFIG_PATH`
 
 Or run explicitly via `torchrun`:
 
