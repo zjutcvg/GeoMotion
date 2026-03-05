@@ -943,7 +943,7 @@ def main():
                         help="Path to pi3 .safetensors checkpoint. If omitted, use PI3_MODEL_PATH env var.")
     parser.add_argument("--raft_model_path", type=str, default=None,
                         help="Path to RAFT checkpoint. If omitted, use RAFT_MODEL_PATH env var.")
-    parser.add_argument("--sam2_config_path", type=str, default=None,
+    parser.add_argument("--sam2_config_path", type=str, default='configs/sam2.1/sam2.1_hiera_l.yaml',
                         help="Path to SAM2 config yaml. If omitted, use SAM2_CONFIG_PATH env var.")
     parser.add_argument("--sam2_checkpoint_path", type=str, default=None,
                         help="Path to SAM2 checkpoint. If omitted, use SAM2_CHECKPOINT_PATH env var.")

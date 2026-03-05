@@ -3,16 +3,16 @@
 <h1>[CVPR26] GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</h1>
 
 <div>
-    <a href='https://github.com/shuiyued' target='_blank'>Xiankang He</a><sup>1,2</sup>&emsp;
-    <a href='#' target='_blank'>Peile Lin</a><sup>1,2</sup>&emsp;
-    <a href='#' target='_blank'>Ying Cui</a><sup>1,2</sup>&emsp;
-    <a href='#' target='_blank'>Dongyan Guo</a><sup>1,2*</sup>&emsp;
-    <a href='#' target='_blank'>Chunhua Shen</a><sup>1,2,3</sup>&emsp;
+    <a href='https://github.com/shuiyued' target='_blank'>Xiankang He</a><sup>1,2</sup> 
+    <a href='#' target='_blank'>Peile Lin</a><sup>1,2</sup> 
+    <a href='#' target='_blank'>Ying Cui</a><sup>1,2</sup> 
+    <a href='#' target='_blank'>Dongyan Guo</a><sup>1,2*</sup> 
+    <a href='#' target='_blank'>Chunhua Shen</a><sup>1,2,3</sup> 
     <a href='#' target='_blank'>Xiaoqin Zhang</a><sup>1,2</sup>
 </div>
 <div>
-    <sup>1</sup> ZJUT&emsp;
-    <sup>2</sup> Zhejiang Key Laboratory of Visual Information Intelligent Processing&emsp;
+    <sup>1</sup> ZJUT 
+    <sup>2</sup> Zhejiang Key Laboratory of Visual Information Intelligent Processing 
     <sup>3</sup> ZJU
 </div>
 <div>
@@ -22,11 +22,13 @@
 <br>
 
 <!-- Badges -->
+
 [![arXiv](https://img.shields.io/badge/arXiv-2602.21810-b31b1b.svg)](http://arxiv.org/abs/2602.21810)
 [![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-FFD21E)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <!-- <img src="assets/method.pdf" width="100%" alt="GeoMotion Teaser"/> -->
+
 <!-- *GeoMotion effectively disentangles object motion from camera motion by leveraging 4D geometric priors.* -->
 
 </div>
@@ -36,6 +38,7 @@
 We present **GeoMotion**, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It elegantly combines 4D geometric priors from a pretrained reconstruction model ($\pi^3$) with local pixel-level motion from optical flow. This enables the disentanglement of object motion from camera motion in a single pass.
 
 <!-- TODO: Add your pipeline/architecture image here -->
+
 ![Pipeline](assets/method.jpg)
 
 ## 🔥 News / Updates
@@ -66,17 +69,16 @@ pip install -r requirements.txt
 
 Please download the required weights and place them inside the `checkpoint/` directory.
 
-| Model | Description | Expected Path | Download Link |
-| :--- | :--- | :--- | :--- |
-| **PI3 Backbone** | Backbone initialization | `checkpoint/model.safetensors` | [🤗 HuggingFace (Pi3)](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors) |
-| **GeoMotion** | Trained motion segmentation model | `checkpoint/best_model.pth` | [🤗 HuggingFace (GeoMotion)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth) |
+| Model                  | Description                       | Expected Path                    | Download Link                                                                                  |
+| :--------------------- | :-------------------------------- | :------------------------------- | :--------------------------------------------------------------------------------------------- |
+| **PI3 Backbone** | Backbone initialization           | `checkpoint/model.safetensors` | [🤗 HuggingFace (Pi3)](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors)         |
+| **GeoMotion**    | Trained motion segmentation model | `checkpoint/best_model.pth`    | [🤗 HuggingFace (GeoMotion)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth) |
 
 ## 📂 3. Dataset Preparation
 
 ### 3.1 Evaluation Datasets
 
 Our dataset preparation follows the same steps as outlined in [OCLR](https://github.com/Jyxarthur/OCLR_model):
-
 
 <details>
 <summary><b>Expected local directory layout (Click to expand)</b></summary>
@@ -97,11 +99,13 @@ data/
     ├── JPEGImages_jpg_standardized/<sequence>/*
     └── GroundTruth/<sequence>/*
 ```
+
 </details>
 
 ### 3.2 Training Datasets
 
 The current training configuration (`configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml`) utilizes the following datasets:
+
 - [GOT-10k](https://got-10k.aitestunion.com/)
 - [HOI4D](https://hoi4d.github.io/)
 - [DynamicStereo](https://github.com/facebookresearch/dynamic_stereo/tree/main)
@@ -119,6 +123,7 @@ train_root:
   - /path/to/got_train_video_roots_with_masks.txt
   - /path/to/DynamicVerse
 ```
+
 > ⚠️ Important: We will gradually upload the annotations for GOT10k and GOTMoving.
 
 ## 🚀 4. Inference and Visualization
@@ -131,23 +136,7 @@ We provide `vis_all.sh` as the recommended entry point for batch inference and v
 bash vis_all.sh
 ```
 
-Advanced usage (override default paths using environment variables):
-
-```bash
-# Use custom paths
-MODEL_PATH=logs/your_run/best_model.pth \
-DATASET_DIR=data/demo_sequences \
-OUTPUT_DIR=output/demo \
-bash vis_all.sh
-
-# Provide RAFT / SAM2 paths explicitly
-RAFT_MODEL_PATH=checkpoint/raft_large.pth \
-SAM2_CONFIG_PATH=configs/sam2.1/sam2.1_hiera_l.yaml \
-SAM2_CHECKPOINT_PATH=sam2-main/checkpoints/sam2.1_hiera_large.pt \
-bash vis_all.sh
-```
-
-### 4.2 Single Sequence Inference
+4.2 Single Sequence Inference
 
 For more granular control, you can run the Python script directly on a single sequence:
 
@@ -217,6 +206,7 @@ bash eval.sh
 ```
 
 If your datasets are not under the default `data/` layout, either:
+
 - set `ROOT_DIR` to your repo root (default is the script directory), or
 - edit the dataset path mapping inside `eval.sh` (`resolve_dataset_roots()`).
 
@@ -225,6 +215,7 @@ If your datasets are not under the default `data/` layout, either:
 ### 6.1 Configure Paths
 
 Edit `configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml`:
+
 - `train_dataset` (recommended: `["got10k", "hoi4d", "dynamic_stereo", "gotmoving", "dynamicverse"]`)
 - `train_root`, `test_root`, `log_dir`
 - `vggt_model_path` (PI3 `.safetensors` path)
@@ -237,6 +228,7 @@ bash train.sh
 ```
 
 `train.sh` supports these environment variables:
+
 - `CUDA_DEVICE`
 - `MASTER_PORT`
 - `NPROC_PER_NODE`

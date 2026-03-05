@@ -969,7 +969,6 @@ class MotionSegmentationInference:
         self.device = device
         
         # Load model
-        # model_path = '/data0/hexiankang/code/SegAnyMo/logs/motion_pi3_omni/motion_seg_model_epoch_14.pth'
         print(f"Loading model from {model_path}")
         checkpoint = torch.load(model_path, map_location=device)
         
@@ -1151,7 +1150,7 @@ class MotionSegmentationInference:
             numpy array: Motion masks [S, H, W] in range [0, 1]
             dict (optional): Additional outputs if return_confidence=True
         """
-        from pi3.models.pi3_conf import run_pi3_attention_analysis
+        # from pi3.models.pi3_conf import run_pi3_attention_analysis
         # Preprocess input
         video_tensor = self.preprocess_video(video_frames).to(self.device)
 
@@ -1502,7 +1501,8 @@ def split_components(mask_t, min_area=64):
 
 def preprocess_mask(mask_tensor, threshold=0.8):
     # 1. 二值化
-    binary_mask = (mask_tensor > threshold).float()
+    # binary_mask = (mask_tensor > threshold).float()
+    binary_mask = (mask_tensor > threshold)
     
     # 2. (可选) 连通域去噪: 如果你想更狠一点，可以把太小的点去掉
     # 注意: 这需要在 CPU numpy 上做，如果不想切设备，只做二值化也足够有效
@@ -1511,7 +1511,7 @@ def preprocess_mask(mask_tensor, threshold=0.8):
     
     return binary_mask
 
-def refine_sam(frame_tensors, mask_list, p_masks_sam, offset=0):
+def refine_sam(frame_tensors, mask_list, p_masks_sam, offset=0, predictor=None):
   """Refine the final motion masks with SAM2.
 
   Args:
@@ -1520,11 +1520,6 @@ def refine_sam(frame_tensors, mask_list, p_masks_sam, offset=0):
     p_masks_sam: returned SAM2-refined masks
     offset: video frame offset
   """
-  model_config = os.environ.get("SAM2_CONFIG_PATH", DEFAULT_SAM2_CONFIG_PATH)
-  checkpoint = os.environ.get("SAM2_CHECKPOINT_PATH", DEFAULT_SAM2_CHECKPOINT_PATH)
-  predictor = build_sam.build_sam2_video_predictor(
-      model_config, checkpoint, device='cuda'
-  )
   # make tmp dir for SAMv2
   tmp_dir = tempfile.mkdtemp()
   for i in range(frame_tensors.shape[0]):
