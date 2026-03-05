@@ -485,6 +485,14 @@ class DAVISEvaluator:
         # Store all predictions with frame names as keys
         all_motion_masks_dict = {}  # {frame_name: motion_mask}
         all_video_frames_dict = {}  # {frame_name: frame_image}
+
+        # Build predictor
+        model_config = self.sam2_config_path or os.environ.get("SAM2_CONFIG_PATH", DEFAULT_SAM2_CONFIG_PATH)
+        checkpoint = self.sam2_checkpoint_path or os.environ.get("SAM2_CHECKPOINT_PATH", DEFAULT_SAM2_CHECKPOINT_PATH)
+    
+        predictor = build_sam.build_sam2_video_predictor(
+            model_config, checkpoint, device='cuda'
+        )
         
         # Process each group independently for inference
         for group_idx, frame_group in enumerate(frame_groups):
@@ -545,7 +553,7 @@ class DAVISEvaluator:
         if use_sam_refine:
             print(f"  Applying SAM2 refinement on all {len(all_motion_masks_array)} frames...")
             all_motion_masks_array = self._refine_with_sam(
-                all_video_frames_list, all_motion_masks_array
+                all_video_frames_list, all_motion_masks_array, predictor=predictor
             )
         
         # Evaluate only frames with matching GT masks
