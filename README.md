@@ -58,11 +58,12 @@ To set up the environment, run the following commands:
 conda create -n geomotion python=3.12 -y
 conda activate geomotion
 
-# requirements.txt is based on the Pi3 environment dependencies
-# If needed, install a PyTorch build matching your CUDA runtime first.
-# Example tested setup (CUDA 12.8):
-# torch 2.9.0.dev20250905+cu128, torchvision 0.24.0.dev20250905+cu128
+# Example tested setup (CUDA 12.8): torch 2.9.0+cu128, torchvision 0.24.0+cu128
 pip install -r requirements.txt
+
+# install sam2 (optional)
+git clone https://github.com/facebookresearch/sam2.git && cd sam2
+pip install -e .
 ```
 
 ## 📦 2. Pretrained Models
@@ -74,9 +75,54 @@ Please download the required weights and place them inside the `checkpoint/` dir
 | **PI3 Backbone** | Backbone initialization           | `checkpoint/model.safetensors` | [🤗 HuggingFace (Pi3)](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors)         |
 | **GeoMotion**    | Trained motion segmentation model | `checkpoint/best_model.pth`    | [🤗 HuggingFace (GeoMotion)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth) |
 
-## 📂 3. Dataset Preparation
+## 🚀 3. Quick Demo
 
-### 3.1 Evaluation Datasets
+If you want to try GeoMotion as quickly as possible, use the provided shell scripts directly.
+
+### 3.1 Single Sequence Demo
+
+Use `vis.sh` for one sequence stored as a single frame directory:
+
+```bash
+bash vis.sh
+```
+
+Equivalent Python command:
+
+```bash
+python motion_seg_inference.py \
+  --model_path checkpoint/best_model.pth \
+  --input_dir input/seq \
+  --output_dir output/seq \
+  --threshold 0.1
+```
+
+### 3.2 Multi-sequence Demo
+
+Use `vis_all.sh` when the input root contains multiple video-frame folders:
+
+```bash
+bash vis_all.sh
+```
+
+Equivalent Python command:
+
+```bash
+python motion_seg_inference.py \
+  --model_path checkpoint/best_model.pth \
+  --dataset_dir input/sentinel_all \
+  --output_dir output/sentinel_all \
+  --threshold 0.1
+```
+
+For each processed sequence, GeoMotion saves:
+
+- per-frame overlay visualizations in `*_frames/`
+- a summary figure `*_summary.png`
+
+## 📂 4. Dataset Preparation
+
+### 4.1 Evaluation Datasets
 
 Our dataset preparation follows the same steps as outlined in [OCLR](https://github.com/Jyxarthur/OCLR_model):
 
@@ -102,7 +148,7 @@ data/
 
 </details>
 
-### 3.2 Training Datasets
+### 4.2 Training Datasets
 
 The current training configuration (`configs/pi3_conf_low_35_feature_flow_gotm_verse_stop_all.yaml`) utilizes the following datasets:
 
@@ -126,44 +172,6 @@ train_root:
 
 > ⚠️ Important: We will gradually upload the annotations for GOT10k and GOTMoving.
 
-## 🚀 4. Inference and Visualization
-
-### 4.1 Quick Start (Batch Inference)
-
-We provide `vis_all.sh` as the recommended entry point for batch inference and visualization.
-
-```bash
-bash vis_all.sh
-```
-
-4.2 Single Sequence Inference
-
-For more granular control, you can run the Python script directly on a single sequence:
-
-```bash
-python motion_seg_inference.py \
-  --model_path checkpoint/best_model.pth \
-  --pi3_model_path checkpoint/model.safetensors \
-  --input_dir data/test/<sequence_name> \
-  --output_dir output/single \
-  --sequence_length 32 \
-  --threshold 0.5
-```
-
-### 4.3 Entire Dataset Inference
-
-Replace `--input_dir` with `--dataset_dir` to process multiple sequences at once:
-
-```bash
-python motion_seg_inference.py \
-  --model_path checkpoint/best_model.pth \
-  --pi3_model_path checkpoint/model.safetensors \
-  --dataset_dir data/test \
-  --output_dir output/test \
-  --sequence_length 32 \
-  --threshold 0.5
-```
-
 ## 📊 5. Evaluation
 
 ### 5.1 Evaluate a Single Dataset
@@ -184,14 +192,13 @@ Supported `--davis` flags: `2016`, `2017`, `davis-all`, `2016-M`, `2017-M`, `fbm
 
 ### 5.2 Batch Evaluation Script
 
-`eval.sh` runs evaluation on multiple datasets in one command. It is environment-variable driven, so most users do not need to edit the script.
+`eval.sh` runs evaluation on multiple benchmark datasets in one command.
 
 ```bash
 bash eval.sh
 ```
 
 Default evaluated datasets: `2016-M, 2017-M, 2016, segtrack, fbms`.
-
 
 ## 🏃‍♂️ 6. Training
 

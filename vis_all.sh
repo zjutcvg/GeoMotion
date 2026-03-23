@@ -3,6 +3,6 @@
 
 CUDA_VISIBLE_DEVICES=1 python motion_seg_inference.py \
     --model_path checkpoint/best_model.pth \
-    --dataset_dir /data1/GOT-10k_Train_split_14 \
-    --output_dir /data1/output/GOT-10k_Train_split_14 \
+    --dataset_dir input/sentinel_all \
+    --output_dir output/sentinel_all \
     --threshold 0.1
