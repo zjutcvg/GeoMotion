@@ -174,6 +174,8 @@ train_root:
 
 ## 📊 5. Evaluation
 
+For DAVIS-2016, DAVIS-2017 and DAVIS-all, we follow the setting in [Easi3R](https://github.com/Inception3D/Easi3R/tree/main), while other test sets follow the setting in [OCLR](https://github.com/Jyxarthur/OCLR_mode).
+
 ### 5.1 Evaluate a Single Dataset
 
 ```bash
