@@ -38,15 +38,15 @@
 
 We present **GeoMotion**, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It elegantly combines 4D geometric priors from a pretrained reconstruction model ($\pi^3$) with local pixel-level motion from optical flow. This enables the disentanglement of object motion from camera motion in a single pass.
 
-**Full GeoMotion** extends the original framework with recurrent RAFT features, expanded training on GOT-Motion, Motion-Appearance Decoupling (MAD), and adaptive motion-prior refinement with SAM2. Its checkpoints are distributed through the [GeoMotion model repository](https://huggingface.co/xingyang1/GeoMotion/tree/main), while the expanded [GOT-Motion dataset](https://huggingface.co/datasets/xingyang1/GOT-Motion) supports training and evaluation in more diverse real-world scenes.
+**Full GeoMotion** extends the original model with RAFT recurrent motion features, Motion-Appearance Decoupling (MAD), expanded training data with HOI4d, Dynamic Replica, GOT-Motion and DynamicVerse, and adaptive SAM2-based mask enhancement.
 
 <!-- TODO: Add your pipeline/architecture image here -->
 
-![Pipeline](assets/method.jpg)
+![Pipeline](assets/method.png)
 
 ## 🔥 News / Updates
 
-- **[2026.09]** Added Full GeoMotion resources, the expanded GOT-Motion dataset, and updated evaluation instructions.
+- **[2026.09]** Added Full GeoMotion checkpoint, the expanded GOT-Motion dataset, and updated evaluation instructions.
 - **[2026.02]** 🚀 Training code, evaluation code, and pretrained models will be gradually updated!
 - **[2026.02]** GeoMotion paper is available on ArXiv.
 
