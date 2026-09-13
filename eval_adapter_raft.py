@@ -908,7 +908,7 @@ class DAVISEvaluator:
             return "single", None
 
         multi_ratio = multi_candidate_frames / float(valid_frames)
-        print(multi_ratio)
+        # print(multi_ratio)
         if multi_ratio >= 0.19:
             return "multi", component_labels_by_frame
         return "single", None
