@@ -78,7 +78,7 @@ Please download the required weights and place them inside the `checkpoint/` dir
 | :--- | :--- | :--- | :--- |
 | **PI3 Backbone** | Backbone initialization | `checkpoint/model.safetensors` | [🤗 Hugging Face (Pi3)](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors) |
 | **GeoMotion (CVPR'26)** | Conference-version checkpoint | `checkpoint/best_model.pth` | [🤗 Hugging Face](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth) |
-| **Full GeoMotion** | Recurrent RAFT features, expanded GOT-Motion training data, MAD training, and adaptive refinement | `checkpoint/<geomotion_model>.pth` | [🤗 GeoMotion model repository](https://huggingface.co/xingyang1/GeoMotion/tree/main) |
+| **Full GeoMotion** | Recurrent RAFT features, expanded GOT-Motion training data, MAD training, and adaptive refinement | `checkpoint/<geomotion_model>.pth` | [🤗 GeoMotion model repository](https://huggingface.co/xingyang1/GeoMotion/tree/main/Full_GeoMotion.pth) |
 
 Checkpoint filenames may change as new versions are released. Download the desired `.pth` file from the model repository and pass its local path through `--model_path`.
 
