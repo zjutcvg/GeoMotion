@@ -24,7 +24,8 @@
 <!-- Badges -->
 
 [![arXiv](https://img.shields.io/badge/arXiv-2602.21810-b31b1b.svg)](http://arxiv.org/abs/2602.21810)
-[![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-FFD21E)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth)
+[![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-FFD21E)](https://huggingface.co/xingyang1/GeoMotion/tree/main)
+[![GOT-Motion](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-GOT--Motion-FFD21E)](https://huggingface.co/datasets/xingyang1/GOT-Motion)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <!-- <img src="assets/method.pdf" width="100%" alt="GeoMotion Teaser"/> -->
@@ -37,12 +38,15 @@
 
 We present **GeoMotion**, a new feed-forward motion segmentation framework that directly infers dynamic masks from latent 4D geometry. It elegantly combines 4D geometric priors from a pretrained reconstruction model ($\pi^3$) with local pixel-level motion from optical flow. This enables the disentanglement of object motion from camera motion in a single pass.
 
+**Full GeoMotion** extends the original framework with recurrent RAFT features, expanded training on GOT-Motion, Motion-Appearance Decoupling (MAD), and adaptive motion-prior refinement with SAM2. Its checkpoints are distributed through the [GeoMotion model repository](https://huggingface.co/xingyang1/GeoMotion/tree/main), while the expanded [GOT-Motion dataset](https://huggingface.co/datasets/xingyang1/GOT-Motion) supports training and evaluation in more diverse real-world scenes.
+
 <!-- TODO: Add your pipeline/architecture image here -->
 
 ![Pipeline](assets/method.jpg)
 
 ## 🔥 News / Updates
 
+- **[2026.09]** Added Full GeoMotion resources, the expanded GOT-Motion dataset, and updated evaluation instructions.
 - **[2026.02]** 🚀 Training code, evaluation code, and pretrained models will be gradually updated!
 - **[2026.02]** GeoMotion paper is available on ArXiv.
 
@@ -70,10 +74,13 @@ pip install -e .
 
 Please download the required weights and place them inside the `checkpoint/` directory.
 
-| Model                  | Description                       | Expected Path                    | Download Link                                                                                  |
-| :--------------------- | :-------------------------------- | :------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **PI3 Backbone** | Backbone initialization           | `checkpoint/model.safetensors` | [🤗 HuggingFace (Pi3)](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors)         |
-| **GeoMotion**    | Trained motion segmentation model | `checkpoint/best_model.pth`    | [🤗 HuggingFace (GeoMotion)](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth) |
+| Model | Description | Expected Path | Download Link |
+| :--- | :--- | :--- | :--- |
+| **PI3 Backbone** | Backbone initialization | `checkpoint/model.safetensors` | [🤗 Hugging Face (Pi3)](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors) |
+| **GeoMotion (CVPR'26)** | Conference-version checkpoint | `checkpoint/best_model.pth` | [🤗 Hugging Face](https://huggingface.co/xingyang1/GeoMotion/blob/main/best_model.pth) |
+| **Full GeoMotion** | Recurrent RAFT features, expanded GOT-Motion training data, MAD training, and adaptive refinement | `checkpoint/<geomotion_model>.pth` | [🤗 GeoMotion model repository](https://huggingface.co/xingyang1/GeoMotion/tree/main) |
+
+Checkpoint filenames may change as new versions are released. Download the desired `.pth` file from the model repository and pass its local path through `--model_path`.
 
 ## 🚀 3. Quick Demo
 
@@ -156,6 +163,7 @@ The current training configuration (`configs/pi3_conf_low_35_feature_flow_gotm_v
 - [HOI4D](https://hoi4d.github.io/)
 - [DynamicStereo](https://github.com/facebookresearch/dynamic_stereo/tree/main)
 - [DynamicVerse](https://huggingface.co/datasets/kairunwen/DynamicVerse/tree/main)
+- [GOT-Motion](https://huggingface.co/datasets/xingyang1/GOT-Motion)
 
 > ⚠️ **Important:** In your config file, `train_root` **must** be in the exact same order as `train_dataset`.
 
@@ -170,7 +178,7 @@ train_root:
   - /path/to/DynamicVerse
 ```
 
-> ⚠️ Important: We will gradually upload the annotations for GOT10k and GOTMoving.
+The `gotmoving` entry corresponds to GOT-Motion. Please refer to the [GOT-Motion dataset repository](https://huggingface.co/datasets/xingyang1/GOT-Motion) for the latest release files and preparation instructions.
 
 ## 📊 5. Evaluation
 
@@ -201,6 +209,38 @@ bash eval.sh
 ```
 
 Default evaluated datasets: `2016-M, 2017-M, 2016, segtrack, fbms`.
+
+### 5.3 Full GeoMotion Evaluation
+
+Full GeoMotion combines recurrent RAFT features with expanded GOT-Motion training data and MAD training, and supports adaptive motion-prior refinement with SAM2. Its evaluation entry point, `eval_adapter_raft.sh`, wraps `eval_adapter_raft.py` and can evaluate DAVIS, FBMS-59, SegTrackV2, and GOT-Motion.
+
+> **Note:** This section documents the entry point used for Full GeoMotion experiments. Make sure `eval_adapter_raft.sh` and `eval_adapter_raft.py` are present in your checkout before running the commands below.
+
+Before running the script, set the model, dataset, PI3, RAFT, and optional SAM2 checkpoint paths for your local environment. A portable equivalent of the shell command is:
+
+```bash
+python eval_adapter_raft.py \
+  --model_path checkpoint/<geomotion_model>.pth \
+  --pi3_model_path checkpoint/model.safetensors \
+  --raft_model_path checkpoint/raft_large_C_T_SKHT_V2-ff5fadd5.pth \
+  --output_dir eval/fbms_adapter_raft \
+  --image_root data/FBMS59_clean/JPEGImages \
+  --annotation_root data/FBMS59_clean/Annotations \
+  --sequence_length 32 \
+  --use_sam_refine True \
+  --refine_mode auto \
+  --davis fbms \
+  --sam2_config_path sam2-main/sam2/configs/sam2.1/sam2.1_hiera_l.yaml \
+  --sam2_checkpoint_path checkpoint/sam2.1_hiera_large.pt
+```
+
+Alternatively, configure the paths and dataset list in `eval_adapter_raft.sh`, then run:
+
+```bash
+bash eval_adapter_raft.sh
+```
+
+Supported dataset flags include `2016`, `2017`, `davis-all`, `2016-M`, `2017-M`, `fbms`, `segtrack`, and `got-test`. Set `--use_sam_refine False` to disable SAM2 refinement, or select `single`, `multi`, or `auto` with `--refine_mode`.
 
 ## 🏃‍♂️ 6. Training
 
